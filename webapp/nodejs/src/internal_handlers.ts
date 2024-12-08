@@ -20,9 +20,9 @@ const calculateScore = (
     Math.abs(ride.dropoff_latitude - ride.pickup_latitude) +
     Math.abs(ride.dropoff_longitude - ride.pickup_longitude);
 
-  const score = speed / (pickupDistance + rideDistance);
+  const score = speed / (pickupDistance + rideDistance + 1);
 
-  if (score < cutoff || (speed <= 2 && pickupDistance + rideDistance > 10)) {
+  if (score < cutoff) {
     return -Infinity;
   }
   return score;
