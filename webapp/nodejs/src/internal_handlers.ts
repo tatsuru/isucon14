@@ -20,7 +20,6 @@ LEFT JOIN ride_statuses rs ON latest_status.ride_id = rs.ride_id AND latest_stat
 WHERE is_active = TRUE AND (rs.status = 'COMPLETED' OR rs.status IS NULL)`
   );
 
-  console.log(chairs);
   // 椅子がない場合は何もしない
   if (chairs.length === 0) {
     return ctx.body(null, 204);
@@ -35,7 +34,7 @@ WHERE is_active = TRUE AND (rs.status = 'COMPLETED' OR rs.status IS NULL)`
   for (const ride of rides) {
     // 最も近い椅子を探す
     // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
-    let minDistance = 200;
+    let minDistance = Infinity;
     let nearestChair: (Chair & RowDataPacket) | null = null;
 
     for (const chair of chairs) {
