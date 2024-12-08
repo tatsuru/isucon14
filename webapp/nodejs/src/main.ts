@@ -124,10 +124,6 @@ async function postInitialize(ctx: Context<Environment>) {
       [body.payment_server]
     );
 
-    await ctx.var.dbConn.query(
-      "ALTER TABLE chairs ADD COLUMN total_distance BIGINT NOT NULL DEFAULT 0"
-    );
-
     const [rows] = await ctx.var.dbConn.query<
       Array<{ id: string; total_distance: number } & RowDataPacket>
     >(
@@ -143,6 +139,10 @@ async function postInitialize(ctx: Context<Environment>) {
                   ABS(longitude - LAG(longitude) OVER (PARTITION BY chair_id ORDER BY created_at)) AS distance
                FROM chair_locations) tmp
            GROUP BY chair_id) distance_table ON distance_table.chair_id = chairs.id`
+    );
+
+    await ctx.var.dbConn.query(
+      "ALTER TABLE chairs ADD COLUMN total_distance BIGINT NOT NULL DEFAULT 0"
     );
 
     for (const row of rows) {
