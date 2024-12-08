@@ -22,7 +22,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
     console.log(`Chair ${chair.id} completed: ${!!result["COUNT(*) = 0"]}`);
 
-    if (!result["COUNT(*) = 0"]) {
+    if (!!result["COUNT(*) = 0"]) {
       completedChairs.push(chair);
     }
   }
