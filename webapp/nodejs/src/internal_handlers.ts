@@ -20,7 +20,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
       [chair.id]
     );
 
-    console.log(`Chair ${chair.id} completed: ${!!result["COUNT(*) = 0"]}`);
+    //console.log(`Chair ${chair.id} completed: ${!!result["COUNT(*) = 0"]}`);
 
     if (!!result["COUNT(*) = 0"]) {
       completedChairs.push(chair);
@@ -47,7 +47,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
     ) cl2 ON cl1.chair_id = cl2.chair_id AND cl1.created_at = cl2.latest_created_at`,
     chairIds2
   );
-  console.log(`Chair locations: ${chairLocations.length}`);
+  //console.log(`Chair locations: ${chairLocations.length}`);
 
   // ライドを取得
   const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
@@ -56,30 +56,30 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
   // ライドと椅子をマッチング
   for (const ride of rides) {
-    console.log(`Matching ride ${ride.id}`);
+    //console.log(`Matching ride ${ride.id}`);
     // 最も近い椅子を探す
     // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
     let minDistance = 200;
     let nearestChair: (ChairLocation & RowDataPacket) | null = null;
 
-    console.log(`Remaining chairs: ${chairs.length}`);
+    //console.log(`Remaining chairs: ${chairs.length}`);
     for (const chair of chairLocations) {
       const distance =
         Math.abs(chair.latitude - ride.pickup_latitude) +
         Math.abs(chair.longitude - ride.pickup_longitude);
-      console.log(`Chair ${chair.chair_id} distance: ${distance}`);
+      //console.log(`Chair ${chair.chair_id} distance: ${distance}`);
       if (distance < minDistance) {
         minDistance = distance;
         nearestChair = chair;
       }
     }
-    console.log(
+    //console.log(
       `Nearest chair: ${nearestChair?.chair_id}, distance: ${minDistance}`
     );
 
     // ライドに椅子を紐付ける
     if (nearestChair) {
-      console.log(
+      //console.log(
         `Matched ride ${ride.id} with chair ${nearestChair.chair_id}`
       );
       await ctx.var.dbConn.query("UPDATE rides SET chair_id = ? WHERE id = ?", [
@@ -89,7 +89,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
       // 紐付けた椅子を消す
       chairLocations.splice(chairLocations.indexOf(nearestChair), 1);
-      console.log(`Remaining chairs: ${chairLocations.length}`);
+      //console.log(`Remaining chairs: ${chairLocations.length}`);
 
       // 椅子がなくなったら終了
       if (chairLocations.length === 0) {
