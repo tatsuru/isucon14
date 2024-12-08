@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -v
+
+root=$(cd "$(dirname "$0")" && cd .. && pwd)
+
+command="cat /var/log/nginx/access.log | alp json --sort=sum -r -m '/api/app/rides/[0-9A-Z]+/evaluation,/api/chair/rides/[0-9A-Z]+/status,/assets/.+.(js|css),/images/.+.(svg|png),/favicon.+.png'"
+
+ssh isucon@52.69.122.54 "$command"
