@@ -106,7 +106,9 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
         // 紐付けた椅子を消す
         chairLocationsWithModel.splice(
-          chairLocationsWithModel.indexOf(nearestChair),
+          chairLocationsWithModel.findIndex(
+            (c) => c.chair_id === nearestChair.chair_id
+          )!,
           1
         );
         //console.log(`Remaining chairs: ${chairLocations.length}`);
