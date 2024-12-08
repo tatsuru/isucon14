@@ -7,6 +7,7 @@ export type Chair = {
   created_at: Date;
   updated_at: Date;
   total_distance: number;
+  model: string;
 };
 
 export type ChairModel = {
