@@ -74,6 +74,23 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
       longitude: reqJson.longitude,
       created_at: now,
     };
+    const [[oldLocation]] = await ctx.var.dbConn.query<
+      Array<ChairLocation & RowDataPacket>
+    >(
+      "SELECT * FROM chair_locations WHERE chair_id = ? ORDER BY created_at DESC LIMIT 1",
+      [chair.id]
+    );
+    await ctx.var.dbConn.query(
+      "UPDATE chairs SET total_distance = ? WHERE id = ?",
+      [
+        oldLocation
+          ? chair.total_distance +
+            Math.abs(reqJson.latitude - oldLocation.latitude) +
+            Math.abs(reqJson.longitude - oldLocation.longitude)
+          : chair.total_distance,
+        chair.id,
+      ]
+    );
     await ctx.var.dbConn.query(
       "INSERT INTO chair_locations (id, chair_id, latitude, longitude, created_at) VALUES (?, ?, ?, ?, ?)",
       [
@@ -175,7 +192,7 @@ export const chairGetNotification = async (ctx: Context<Environment>) => {
           },
           status,
         },
-        retry_after_ms: 100,
+        retry_after_ms: 30,
       },
       200
     );

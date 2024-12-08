@@ -18,14 +18,14 @@ export const ownerPostOwners = async (ctx: Context<Environment>) => {
   const chairRegisterToken = secureRandomStr(32);
   await ctx.var.dbConn.query(
     "INSERT INTO owners (id, name, access_token, chair_register_token) VALUES (?, ?, ?, ?)",
-    [ownerId, name, accessToken, chairRegisterToken],
+    [ownerId, name, accessToken, chairRegisterToken]
   );
 
   setCookie(ctx, "owner_session", accessToken, { path: "/" });
 
   return ctx.json(
     { id: ownerId, chair_register_token: chairRegisterToken },
-    201,
+    201
   );
 };
 
@@ -44,7 +44,7 @@ export const ownerGetSales = async (ctx: Context<Environment>) => {
   try {
     const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
       "SELECT * FROM chairs WHERE owner_id = ?",
-      [owner.id],
+      [owner.id]
     );
 
     let totalSales = 0;
@@ -53,7 +53,7 @@ export const ownerGetSales = async (ctx: Context<Environment>) => {
     for (const chair of chairs) {
       const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
         "SELECT rides.* FROM rides JOIN ride_statuses ON rides.id = ride_statuses.ride_id WHERE chair_id = ? AND status = 'COMPLETED' AND updated_at BETWEEN ? AND ? + INTERVAL 999 MICROSECOND",
-        [chair.id, since, until],
+        [chair.id, since, until]
       );
       const sales = sumSales(rides);
       totalSales += sales;
@@ -114,20 +114,10 @@ export const ownerGetChairs = async (ctx: Context<Environment>) => {
        is_active,
        created_at,
        updated_at,
-       IFNULL(total_distance, 0) AS total_distance,
-       total_distance_updated_at
+       total_distance
 FROM chairs
-       LEFT JOIN (SELECT chair_id,
-                          SUM(IFNULL(distance, 0)) AS total_distance,
-                          MAX(created_at)          AS total_distance_updated_at
-                   FROM (SELECT chair_id,
-                                created_at,
-                                ABS(latitude - LAG(latitude) OVER (PARTITION BY chair_id ORDER BY created_at)) +
-                                ABS(longitude - LAG(longitude) OVER (PARTITION BY chair_id ORDER BY created_at)) AS distance
-                         FROM chair_locations) tmp
-                   GROUP BY chair_id) distance_table ON distance_table.chair_id = chairs.id
 WHERE owner_id = ?`,
-    [owner.id],
+    [owner.id]
   );
 
   const chairResponse = chairs.map((chair) => {
@@ -139,8 +129,8 @@ WHERE owner_id = ?`,
       registered_at: chair.created_at.getTime(),
       total_distance: Number(chair.total_distance),
     };
-    if (chair.total_distance_updated_at) {
-      c.total_distance_updated_at = chair.total_distance_updated_at.getTime();
+    if (chair.total_distance !== 0) {
+      c.total_distance_updated_at = chair.updated_at.getTime();
     }
     return c;
   });
