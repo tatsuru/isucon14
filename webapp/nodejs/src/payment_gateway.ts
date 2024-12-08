@@ -1,3 +1,4 @@
+import { ulid } from "ulid";
 import { ErroredUpstream } from "./common.js";
 import type { Ride } from "./types/models.js";
 import { setTimeout } from "node:timers/promises";
@@ -12,8 +13,8 @@ export const requestPaymentGatewayPostPayment = async (
   param: PaymentGatewayPostPaymentRequest,
   retrieveRidesOrderByCreatedAtAsc: () => Promise<Ride[]>
 ): Promise<ErroredUpstream | Error | undefined> => {
-  // 失敗したらとりあえずリトライ
-  // FIXME: 社内決済マイクロサービスのインフラに異常が発生していて、同時にたくさんリクエストすると変なことになる可能性あり
+  const idempotencyKey = ulid();
+
   let retry = 0;
   while (true) {
     try {
@@ -22,6 +23,7 @@ export const requestPaymentGatewayPostPayment = async (
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Idempotency-Key": idempotencyKey,
         },
         body: JSON.stringify(param),
       });
@@ -32,6 +34,7 @@ export const requestPaymentGatewayPostPayment = async (
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Idempotency-Key": idempotencyKey,
           },
         });
 
