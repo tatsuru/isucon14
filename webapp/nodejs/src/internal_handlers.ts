@@ -25,7 +25,7 @@ FROM (
     WHERE rides.chair_id IN (${chairIds.map(() => "?").join(",")})
     GROUP BY rides.chair_id
 ) is_completed
-WHERE completed = FALSE`,
+WHERE completed = TRUE`,
     chairIds
   );
 
