@@ -12,22 +12,19 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
   const chairIds = chairs.map((chair) => chair.id);
 
-  const [completedChairs] = await ctx.var.dbConn.query<
-    Array<{ chair_id: string } & RowDataPacket>
-  >(
-    `SELECT chair_id
-FROM (
-    SELECT 
-        rides.chair_id,
-        COUNT(CASE WHEN rs.chair_sent_at IS NOT NULL THEN 1 END) = 6 AS completed
-    FROM rides
-    LEFT JOIN ride_statuses rs ON rides.id = rs.ride_id
-    WHERE rides.chair_id IN (${chairIds.map(() => "?").join(",")})
-    GROUP BY rides.chair_id
-) is_completed
-WHERE completed = TRUE OR completed IS NULL`,
-    chairIds
-  );
+  let completedChairs: Array<Chair & RowDataPacket> = [];
+
+  for (const chair of chairs) {
+    const [[result]] = await ctx.var.dbConn.query<
+      Array<{ "COUNT(*) = 0": number } & RowDataPacket>
+    >(
+      `SELECT COUNT(*) = 0 FROM (SELECT COUNT(chair_sent_at) = 6 AS completed FROM ride_statuses WHERE ride_id IN (SELECT id FROM rides WHERE chair_id = ?) GROUP BY ride_id) is_completed WHERE completed = FALSE`,
+      [chair.id]
+    );
+    if (!result["COUNT(*) = 0"]) {
+      completedChairs.push(chair);
+    }
+  }
 
   // 椅子がない場合は何もしない
   if (completedChairs.length === 0) {
