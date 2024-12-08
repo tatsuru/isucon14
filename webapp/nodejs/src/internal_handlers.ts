@@ -3,6 +3,30 @@ import type { Environment } from "./types/hono.js";
 import type { RowDataPacket } from "mysql2";
 import type { Chair, ChairLocation, Ride } from "./types/models.js";
 
+const calculateScore = (
+  ride: Ride & RowDataPacket,
+  chair: Chair & RowDataPacket,
+  chairLocation: ChairLocation & RowDataPacket,
+  cutoff?: number // cutoff以下であればマッチングさせない(-inftyを返す)
+) => {
+  if (cutoff === undefined) {
+    cutoff = -Infinity;
+  }
+  const pickupDistance =
+    Math.abs(ride.pickup_latitude - chairLocation.latitude) +
+    Math.abs(ride.pickup_longitude - chairLocation.longitude);
+  const rideDistance =
+    Math.abs(ride.dropoff_latitude - ride.pickup_latitude) +
+    Math.abs(ride.dropoff_longitude - ride.pickup_longitude);
+
+  const score = pickupDistance + rideDistance;
+
+  if (score > cutoff) {
+    return -Infinity;
+  }
+  return score;
+};
+
 // このAPIをインスタンス内から一定間隔で叩かせることで、椅子とライドをマッチングさせる
 export const internalGetMatching = async (ctx: Context<Environment>) => {
   await ctx.var.dbConn.beginTransaction();
@@ -61,18 +85,21 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
       //console.log(`Matching ride ${ride.id}`);
       // 最も近い椅子を探す
       // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
-      let minDistance = 200;
-      let nearestChair: (ChairLocation & RowDataPacket) | null = null;
+      let maxScore = -Infinity;
+      let nearestChairLocation: (ChairLocation & RowDataPacket) | null = null;
 
       //console.log(`Remaining chairs: ${chairs.length}`);
-      for (const chair of chairLocations) {
-        const distance =
-          Math.abs(chair.latitude - ride.pickup_latitude) +
-          Math.abs(chair.longitude - ride.pickup_longitude);
-        //console.log(`Chair ${chair.chair_id} distance: ${distance}`);
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearestChair = chair;
+      for (const chairLocation of chairLocations) {
+        const chair = completedChairs.find(
+          (chair) => chair.id === chairLocation.chair_id
+        );
+        if (!chair) {
+          continue;
+        }
+        const score = calculateScore(ride, chair, chairLocation);
+        if (score > maxScore) {
+          maxScore = score;
+          nearestChairLocation = chairLocation;
         }
       }
       //console.log(
@@ -80,17 +107,17 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
       //);
 
       // ライドに椅子を紐付ける
-      if (nearestChair) {
+      if (nearestChairLocation) {
         //console.log(
         //  `Matched ride ${ride.id} with chair ${nearestChair.chair_id}`
         //);
         await ctx.var.dbConn.query(
           "UPDATE rides SET chair_id = ? WHERE id = ?",
-          [nearestChair.chair_id, ride.id]
+          [nearestChairLocation.chair_id, ride.id]
         );
 
         // 紐付けた椅子を消す
-        chairLocations.splice(chairLocations.indexOf(nearestChair), 1);
+        chairLocations.splice(chairLocations.indexOf(nearestChairLocation), 1);
         //console.log(`Remaining chairs: ${chairLocations.length}`);
 
         // 椅子がなくなったら終了
