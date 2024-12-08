@@ -7,6 +7,7 @@ const calculateScore = (
   ride: Ride & RowDataPacket,
   chair: Chair & RowDataPacket,
   chairLocation: ChairLocation & RowDataPacket,
+  speed: number,
   cutoff?: number // cutoff以下であればマッチングさせない(-inftyを返す)
 ) => {
   if (cutoff === undefined) {
@@ -19,9 +20,9 @@ const calculateScore = (
     Math.abs(ride.dropoff_latitude - ride.pickup_latitude) +
     Math.abs(ride.dropoff_longitude - ride.pickup_longitude);
 
-  const score = pickupDistance + rideDistance;
+  const score = speed / (pickupDistance + rideDistance);
 
-  if (score < cutoff) {
+  if (score < cutoff || (speed <= 2 && pickupDistance + rideDistance > 10)) {
     return -Infinity;
   }
   return score;
@@ -39,6 +40,13 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
     // 空いている椅子を取得
     const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
       `SELECT * FROM chairs WHERE is_active = 1`
+    );
+
+    const [chairModels] = await ctx.var.dbConn.query<
+      Array<{ name: string; speed: number } & RowDataPacket>
+    >(`SELECT * FROM chair_models`);
+    const modelNameToSpeedMap = new Map<string, number>(
+      chairModels.map(({ name, speed }) => [name, speed])
     );
 
     let completedChairs: Array<Chair & RowDataPacket> = [];
@@ -96,7 +104,8 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
         if (!chair) {
           continue;
         }
-        const score = calculateScore(ride, chair, chairLocation);
+        const speed = modelNameToSpeedMap.get(chair.model)!;
+        const score = calculateScore(ride, chair, chairLocation, speed);
         if (score > maxScore) {
           maxScore = score;
           nearestChairLocation = chairLocation;
