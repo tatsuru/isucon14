@@ -10,8 +10,6 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
     `SELECT * FROM chairs WHERE is_active = 1`
   );
 
-  const chairIds = chairs.map((chair) => chair.id);
-
   let completedChairs: Array<Chair & RowDataPacket> = [];
 
   for (const chair of chairs) {
@@ -21,6 +19,9 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
       `SELECT COUNT(*) = 0 FROM (SELECT COUNT(chair_sent_at) = 6 AS completed FROM ride_statuses WHERE ride_id IN (SELECT id FROM rides WHERE chair_id = ?) GROUP BY ride_id) is_completed WHERE completed = FALSE`,
       [chair.id]
     );
+
+    console.log(`Chair ${chair.id} completed: ${!!result["COUNT(*) = 0"]}`);
+
     if (!result["COUNT(*) = 0"]) {
       completedChairs.push(chair);
     }
