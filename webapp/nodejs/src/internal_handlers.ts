@@ -38,10 +38,12 @@ WHERE is_active = TRUE AND (rs.status = 'COMPLETED' OR rs.status IS NULL)`
     let minDistance = Infinity;
     let nearestChair: (Chair & RowDataPacket) | null = null;
 
+    console.log(`Remaining chairs: ${chairs.length}`);
     for (const chair of chairs) {
       const distance =
         Math.abs(chair.latitude - ride.pickup_latitude) +
         Math.abs(chair.longitude - ride.pickup_longitude);
+      console.log(`Chair ${chair.id} distance: ${distance}`);
       if (distance < minDistance) {
         minDistance = distance;
         nearestChair = chair;
