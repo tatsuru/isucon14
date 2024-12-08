@@ -29,6 +29,7 @@ ssh isucon@$isu3 "$restart" &
 ssh isucon@$isu1 "$rotate_nginx" &
 
 # mysql
-ssh isucon@isu3 "$rotate_mysql" &
+ssh isucon@$isu3 "$rotate_mysql" &
 
 wait
+
