@@ -66,13 +66,24 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
   const chairLocationID = ulid();
   await ctx.var.dbConn.beginTransaction();
   try {
+    const now = new Date();
+    const location: ChairLocation = {
+      id: chairLocationID,
+      chair_id: chair.id,
+      latitude: reqJson.latitude,
+      longitude: reqJson.longitude,
+      created_at: now,
+    };
     await ctx.var.dbConn.query(
-      "INSERT INTO chair_locations (id, chair_id, latitude, longitude) VALUES (?, ?, ?, ?)",
-      [chairLocationID, chair.id, reqJson.latitude, reqJson.longitude]
+      "INSERT INTO chair_locations (id, chair_id, latitude, longitude, created_at) VALUES (?, ?, ?, ?, ?)",
+      [
+        location.id,
+        location.chair_id,
+        location.latitude,
+        location.longitude,
+        location.created_at,
+      ]
     );
-    const [[location]] = await ctx.var.dbConn.query<
-      Array<ChairLocation & RowDataPacket>
-    >("SELECT * FROM chair_locations WHERE id = ?", [chairLocationID]);
     const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1",
       [chair.id]
