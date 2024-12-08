@@ -76,7 +76,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
     // ライドと椅子をマッチング
     for (const ride of rides) {
       // 配車までの時間を計算
-      const delay = ride.created_at.getTime() - now;
+      const delay = now - ride.created_at.getTime();
 
       // 最も近い椅子を探す
       // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
