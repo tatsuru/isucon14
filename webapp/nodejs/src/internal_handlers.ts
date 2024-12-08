@@ -3,7 +3,6 @@ import type { Environment } from "./types/hono.js";
 import type { RowDataPacket } from "mysql2";
 import type { Chair, ChairLocation, Ride } from "./types/models.js";
 
-const calculateScore = async();
 
 // このAPIをインスタンス内から一定間隔で叩かせることで、椅子とライドをマッチングさせる
 export const internalGetMatching = async (ctx: Context<Environment>) => {
