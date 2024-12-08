@@ -71,8 +71,10 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
     const now = Date.now();
 
+    rides.reverse();
+
     // ライドと椅子をマッチング
-    for (const ride of rides.toReversed()) {
+    for (const ride of rides) {
       // 配車までの時間を計算
       const delay = ride.created_at.getTime() - now;
 
