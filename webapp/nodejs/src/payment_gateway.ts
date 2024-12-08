@@ -48,7 +48,7 @@ export const requestPaymentGatewayPostPayment = async (
 
         const rides = await retrieveRidesOrderByCreatedAtAsc();
         if (rides.length !== payments.length) {
-          return new ErroredUpstream(
+          throw new ErroredUpstream(
             `unexpected number of payments: ${rides.length} != ${payments.length}`
           );
         }
