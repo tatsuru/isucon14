@@ -125,10 +125,17 @@ async function postInitialize(ctx: Context<Environment>) {
     );
 
     const [rows] = await ctx.var.dbConn.query<
-      Array<{ id: string; total_distance: number } & RowDataPacket>
+      Array<
+        {
+          id: string;
+          total_distance: number;
+          total_distance_updated_at: Date;
+        } & RowDataPacket
+      >
     >(
       `SELECT id,
-      IFNULL(total_distance, 0) AS total_distance
+      IFNULL(total_distance, 0) AS total_distance,
+      total_distance_updated_at
       FROM chairs
       LEFT JOIN (SELECT chair_id,
               SUM(IFNULL(distance, 0)) AS total_distance,
@@ -147,8 +154,8 @@ async function postInitialize(ctx: Context<Environment>) {
 
     for (const row of rows) {
       await ctx.var.dbConn.query(
-        `UPDATE chairs SET total_distance = ? WHERE id = ?`,
-        [row.total_distance, row.id]
+        `UPDATE chairs SET total_distance = ?, updated_at = ? WHERE id = ?`,
+        [row.row.total_distance, row.row.total_distance_updated_at, row.row.id]
       );
     }
   } catch (error) {
