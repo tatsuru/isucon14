@@ -152,6 +152,7 @@ async function postInitialize(ctx: Context<Environment>) {
       );
     }
   } catch (error) {
+    console.error(error);
     return ctx.text(`Internal Server Error\n${error}`, 500);
   }
   return ctx.json({ language: "node" });
