@@ -5,7 +5,7 @@ After=mysql.service
 Requires=mysql.service
 
 [Service]
-WorkingDirectory=/home/isucon/webapp/nodejs
+WorkingDirectory=/home/isucon/isucon14/webapp/nodejs
 EnvironmentFile=/home/isucon/env.sh
 
 User=isucon
