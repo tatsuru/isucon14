@@ -444,8 +444,6 @@ export const appPostRideEvaluatation = async (ctx: Context<Environment>) => {
     );
     const paymentGatewayRequest = { amount: fare };
 
-    await ctx.var.dbConn.commit();
-
     const [[{ value: paymentGatewayURL }]] = await ctx.var.dbConn.query<
       Array<string & RowDataPacket>
     >("SELECT value FROM settings WHERE name = 'payment_gateway_url'");
@@ -465,6 +463,8 @@ export const appPostRideEvaluatation = async (ctx: Context<Environment>) => {
       console.error(err);
       return ctx.text(`${err}`, 502);
     }
+
+    await ctx.var.dbConn.commit();
     return ctx.json(
       {
         completed_at: ride.updated_at.getTime(),
