@@ -69,36 +69,27 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
       return { ...cl, model: chair.model };
     });
 
+    const now = Date.now();
+
     // ライドと椅子をマッチング
-    for (const ride of rides) {
+    for (const ride of rides.toReversed()) {
+      // 配車までの時間を計算
+      const delay = ride.created_at.getTime() - now;
+
       // 最も近い椅子を探す
-      let minTime = Infinity;
-      let nearestChair:
-        | (ChairLocation &
-            RowDataPacket & {
-              model: string;
-            })
-        | null = null;
+      // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
+      let minScore = 0;
+      let nearestChair: (ChairLocation & RowDataPacket) | null = null;
 
-      for (const chair of chairLocationsWithModel) {
-        const placementDistance =
+      //console.log(`Remaining chairs: ${chairs.length}`);
+      for (const chair of chairLocations) {
+        const score =
           Math.abs(chair.latitude - ride.pickup_latitude) +
-          Math.abs(chair.longitude - ride.pickup_longitude);
-        if (placementDistance > 200) {
-          // 0,0 と 300, 300付近にクラスター(都市)があるので、都市をまたぐような配車はしない
-          continue;
-        }
-        const rideDistance =
-          Math.abs(ride.pickup_latitude - ride.destination_latitude) +
-          Math.abs(ride.pickup_longitude - ride.destination_longitude);
-
-        const time =
-          (placementDistance + rideDistance) /
-          chairModelSpeedMap.get(chair.model)!;
+          Math.abs(chair.longitude - ride.pickup_longitude) -
+          delay;
         //console.log(`Chair ${chair.chair_id} distance: ${distance}`);
-
-        if (time < minTime) {
-          minTime = time;
+        if (score < minScore) {
+          minScore = score;
           nearestChair = chair;
         }
       }
