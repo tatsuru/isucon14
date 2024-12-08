@@ -51,20 +51,23 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
     // 空いている椅子の位置情報を取得
     const chairIds2 = completedChairs.map((chair) => chair.id);
     const [chairLocations] = await ctx.var.dbConn.query<
-      Array<ChairLocation & RowDataPacket & { model: string }>
+      Array<ChairLocation & RowDataPacket>
     >(
-      `SELECT cl1.chair_id, cl1.latitude, cl1.longitude, c.model
-      FROM chair_locations cl1
-      INNER JOIN (
-        SELECT chair_id, MAX(created_at) AS latest_created_at
-        FROM chair_locations
-        WHERE chair_id IN (${chairIds2.map(() => "?").join(",")})
-        GROUP BY chair_id
-      ) cl2 ON cl1.chair_id = cl2.chair_id AND cl1.created_at = cl2.latest_created_at
-      INNER JOIN chairs c ON cl1.chair_id = c.id`,
+      `SELECT cl1.chair_id, cl1.latitude, cl1.longitude
+        FROM chair_locations cl1
+        INNER JOIN (
+          SELECT chair_id, MAX(created_at) AS latest_created_at
+          FROM chair_locations
+          WHERE chair_id IN (${chairIds2.map(() => "?").join(",")})
+          GROUP BY chair_id
+        ) cl2 ON cl1.chair_id = cl2.chair_id AND cl1.created_at = cl2.latest_created_at`,
       chairIds2
     );
     //console.log(`Chair locations: ${chairLocations.length}`);
+    const chairLocationsWithModel = chairLocations.map((cl) => {
+      const chair = completedChairs.find((c) => c.id === cl.chair_id)!;
+      return { ...cl, model: chair.model };
+    });
 
     // ライドと椅子をマッチング
     for (const ride of rides) {
@@ -77,15 +80,21 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
             })
         | null = null;
 
-      for (const chair of chairLocations) {
-        const distance =
+      for (const chair of chairLocationsWithModel) {
+        const placementDistance =
           Math.abs(chair.latitude - ride.pickup_latitude) +
           Math.abs(chair.longitude - ride.pickup_longitude);
-        if (distance > 200) {
+        if (placementDistance > 200) {
           // 0,0 と 300, 300付近にクラスター(都市)があるので、都市をまたぐような配車はしない
           continue;
         }
-        const time = distance / chairModelSpeedMap.get(chair.model)!;
+        const rideDistance =
+          Math.abs(ride.pickup_latitude - ride.destination_latitude) +
+          Math.abs(ride.pickup_longitude - ride.destination_longitude);
+
+        const time =
+          (placementDistance + rideDistance) /
+          chairModelSpeedMap.get(chair.model)!;
         //console.log(`Chair ${chair.chair_id} distance: ${distance}`);
 
         if (time < minTime) {
@@ -105,11 +114,14 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
         );
 
         // 紐付けた椅子を消す
-        chairLocations.splice(chairLocations.indexOf(nearestChair), 1);
+        chairLocationsWithModel.splice(
+          chairLocationsWithModel.indexOf(nearestChair),
+          1
+        );
         //console.log(`Remaining chairs: ${chairLocations.length}`);
 
         // 椅子がなくなったら終了
-        if (chairLocations.length === 0) {
+        if (chairLocationsWithModel.length === 0) {
           break;
         }
       }
