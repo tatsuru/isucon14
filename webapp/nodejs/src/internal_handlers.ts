@@ -3,6 +3,8 @@ import type { Environment } from "./types/hono.js";
 import type { RowDataPacket } from "mysql2";
 import type { Chair, ChairLocation, Ride } from "./types/models.js";
 
+const calculateScore = async();
+
 // このAPIをインスタンス内から一定間隔で叩かせることで、椅子とライドをマッチングさせる
 export const internalGetMatching = async (ctx: Context<Environment>) => {
   await ctx.var.dbConn.beginTransaction();
@@ -56,8 +58,11 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
     );
     //console.log(`Chair locations: ${chairLocations.length}`);
 
+    const now = Date.now();
     // ライドと椅子をマッチング
     for (const ride of rides) {
+      const delay = now - ride.created_at.getTime();
+
       //console.log(`Matching ride ${ride.id}`);
       // 最も近い椅子を探す
       // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
@@ -78,6 +83,15 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
       //console.log(
       //  `Nearest chair: ${nearestChair?.chair_id}, distance: ${minDistance}`
       //);
+
+      if (delay < 300) {
+        // 300ms未満のライドの場合
+        if (minDistance > 10) {
+          // 10m以上離れている椅子は無視
+          //console.log(`Ride ${ride.id} is too far`);
+          continue;
+        }
+      }
 
       // ライドに椅子を紐付ける
       if (nearestChair) {
