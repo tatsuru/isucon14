@@ -49,6 +49,7 @@ WHERE is_active = TRUE AND (rs.status = 'COMPLETED' OR rs.status IS NULL)`
 
     // ライドに椅子を紐付ける
     if (nearestChair) {
+      console.log(`Matched ride ${ride.id} with chair ${nearestChair.id}`);
       await ctx.var.dbConn.query("UPDATE rides SET chair_id = ? WHERE id = ?", [
         nearestChair.id,
         ride.id,
@@ -56,6 +57,7 @@ WHERE is_active = TRUE AND (rs.status = 'COMPLETED' OR rs.status IS NULL)`
 
       // 紐付けた椅子を消す
       chairs.splice(chairs.indexOf(nearestChair), 1);
+      console.log(`Remaining chairs: ${chairs.length}`);
 
       // 椅子がなくなったら終了
       if (chairs.length === 0) {
