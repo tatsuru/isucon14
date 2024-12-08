@@ -21,7 +21,7 @@ const calculateScore = (
 
   const score = pickupDistance + rideDistance;
 
-  if (score > cutoff) {
+  if (score < cutoff) {
     return -Infinity;
   }
   return score;
