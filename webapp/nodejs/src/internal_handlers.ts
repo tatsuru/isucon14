@@ -32,6 +32,7 @@ WHERE is_active = TRUE AND (rs.status = 'COMPLETED' OR rs.status IS NULL)`
 
   // ライドと椅子をマッチング
   for (const ride of rides) {
+    console.log(`Matching ride ${ride.id}`);
     // 最も近い椅子を探す
     // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
     let minDistance = Infinity;
@@ -46,6 +47,7 @@ WHERE is_active = TRUE AND (rs.status = 'COMPLETED' OR rs.status IS NULL)`
         nearestChair = chair;
       }
     }
+    console.log(`Nearest chair: ${nearestChair?.id}, distance: ${minDistance}`);
 
     // ライドに椅子を紐付ける
     if (nearestChair) {
