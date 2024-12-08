@@ -155,7 +155,7 @@ async function postInitialize(ctx: Context<Environment>) {
     for (const row of rows) {
       await ctx.var.dbConn.query(
         `UPDATE chairs SET total_distance = ?, updated_at = ? WHERE id = ?`,
-        [row.row.total_distance, row.row.total_distance_updated_at, row.row.id]
+        [row.total_distance, row.total_distance_updated_at, row.id]
       );
     }
   } catch (error) {
