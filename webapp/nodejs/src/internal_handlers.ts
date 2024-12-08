@@ -10,6 +10,8 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
     `SELECT * FROM chairs WHERE is_active = 1`
   );
 
+  const chairIds = chairs.map((chair) => chair.id);
+
   const [completedChairs] = await ctx.var.dbConn.query<
     Array<{ chair_id: string } & RowDataPacket>
   >(
@@ -20,11 +22,11 @@ FROM (
         COUNT(CASE WHEN rs.chair_sent_at IS NOT NULL THEN 1 END) = 6 AS completed
     FROM rides
     LEFT JOIN ride_statuses rs ON rides.id = rs.ride_id
-    WHERE rides.chair_id IN (${chairs.map(() => "?").join(",")})
+    WHERE rides.chair_id IN (${chairIds.map(() => "?").join(",")})
     GROUP BY rides.chair_id
 ) is_completed
 WHERE completed = FALSE`,
-    [chairs.map((chair) => chair.id)]
+    chairIds
   );
 
   // 椅子がない場合は何もしない
@@ -33,7 +35,7 @@ WHERE completed = FALSE`,
   }
 
   // 空いている椅子の位置情報を取得
-  const chairIds = completedChairs.map((chair) => chair.id);
+  const chairIds2 = completedChairs.map((chair) => chair.chair_id);
   const [chairLocations] = await ctx.var.dbConn.query<
     Array<ChairLocation & RowDataPacket>
   >(
@@ -42,10 +44,10 @@ WHERE completed = FALSE`,
     INNER JOIN (
       SELECT chair_id, MAX(created_at) AS latest_created_at
       FROM chair_locations
-      WHERE chair_id IN (${chairIds.map(() => "?").join(",")})
+      WHERE chair_id IN (${chairIds2.map(() => "?").join(",")})
       GROUP BY chair_id
     ) cl2 ON cl1.chair_id = cl2.chair_id AND cl1.created_at = cl2.latest_created_at`,
-    chairIds
+    chairIds2
   );
 
   // ライドを取得
