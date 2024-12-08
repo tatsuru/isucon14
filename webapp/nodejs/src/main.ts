@@ -44,7 +44,7 @@ const pool = createPool({
 });
 
 const app = new Hono<Environment>();
-app.use(logger());
+//app.use(logger());
 app.use(
   createMiddleware<Environment>(async (ctx, next) => {
     const connection = await pool.getConnection();
