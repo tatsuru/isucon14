@@ -31,7 +31,7 @@ import {
 import type { Environment } from "./types/hono.js";
 import { execSync } from "node:child_process";
 import { internalGetMatching } from "./internal_handlers.js";
-import { createPool } from "mysql2/promise";
+import { createPool, type RowDataPacket } from "mysql2/promise";
 import { logger } from "hono/logger";
 
 const pool = createPool({
@@ -55,7 +55,7 @@ app.use(
       await connection.rollback();
       pool.releaseConnection(connection);
     }
-  }),
+  })
 );
 
 app.post("/api/initialize", postInitialize);
@@ -69,12 +69,12 @@ app.post("/api/app/rides", appAuthMiddleware, appPostRides);
 app.post(
   "/api/app/rides/estimated-fare",
   appAuthMiddleware,
-  appPostRidesEstimatedFare,
+  appPostRidesEstimatedFare
 );
 app.post(
   "/api/app/rides/:ride_id/evaluation",
   appAuthMiddleware,
-  appPostRideEvaluatation,
+  appPostRideEvaluatation
 );
 app.get("/api/app/notification", appAuthMiddleware, appGetNotification);
 app.get("/api/app/nearby-chairs", appAuthMiddleware, appGetNearbyChairs);
@@ -94,7 +94,7 @@ app.get("/api/chair/notification", chairAuthMiddleware, chairGetNotification);
 app.post(
   "/api/chair/rides/:ride_id/status",
   chairAuthMiddleware,
-  chairPostRideStatus,
+  chairPostRideStatus
 );
 
 // internal handlers
@@ -108,7 +108,7 @@ serve(
   },
   (addr) => {
     console.log(`Server is running on http://localhost:${addr.port}`);
-  },
+  }
 );
 
 async function postInitialize(ctx: Context<Environment>) {
@@ -121,8 +121,32 @@ async function postInitialize(ctx: Context<Environment>) {
   try {
     await ctx.var.dbConn.query(
       "UPDATE settings SET value = ? WHERE name = 'payment_gateway_url'",
-      [body.payment_server],
+      [body.payment_server]
     );
+
+    const [rows] = await ctx.var.dbConn.query<
+      Array<{ id: string; total_distance: number } & RowDataPacket>
+    >(
+      `SELECT id,
+      IFNULL(total_distance, 0) AS total_distance
+      FROM chairs
+      LEFT JOIN (SELECT chair_id,
+              SUM(IFNULL(distance, 0)) AS total_distance,
+              MAX(created_at)          AS total_distance_updated_at
+           FROM (SELECT chair_id,
+                  created_at,
+                  ABS(latitude - LAG(latitude) OVER (PARTITION BY chair_id ORDER BY created_at)) +
+                  ABS(longitude - LAG(longitude) OVER (PARTITION BY chair_id ORDER BY created_at)) AS distance
+               FROM chair_locations) tmp
+           GROUP BY chair_id) distance_table ON distance_table.chair_id = chairs.id`
+    );
+
+    for (const row of rows) {
+      await ctx.var.dbConn.query(
+        `UPDATE chairs SET total_distance = ? WHERE id = ?`,
+        [row.total_distance, row.id]
+      );
+    }
   } catch (error) {
     return ctx.text(`Internal Server Error\n${error}`, 500);
   }
