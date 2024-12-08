@@ -24,12 +24,12 @@ export const chairPostChairs = async (ctx: Context<Environment>) => {
   if (!name || !model || !chair_register_token) {
     return ctx.text(
       "some of required fields(name, model, chair_register_token) are empty",
-      400,
+      400
     );
   }
   const [[owner]] = await ctx.var.dbConn.query<Array<Owner & RowDataPacket>>(
     "SELECT * FROM owners WHERE chair_register_token = ?",
-    [chair_register_token],
+    [chair_register_token]
   );
   if (!owner) {
     return ctx.text("invalid chair_register_token", 401);
@@ -38,7 +38,7 @@ export const chairPostChairs = async (ctx: Context<Environment>) => {
   const accessToken = secureRandomStr(32);
   await ctx.var.dbConn.query(
     "INSERT INTO chairs (id, owner_id, name, model, is_active, access_token) VALUES (?, ?, ?, ?, ?, ?)",
-    [chairID, owner.id, name, model, false, accessToken],
+    [chairID, owner.id, name, model, false, accessToken]
   );
 
   setCookie(ctx, "chair_session", accessToken, { path: "/" });
@@ -68,14 +68,14 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
   try {
     await ctx.var.dbConn.query(
       "INSERT INTO chair_locations (id, chair_id, latitude, longitude) VALUES (?, ?, ?, ?)",
-      [chairLocationID, chair.id, reqJson.latitude, reqJson.longitude],
+      [chairLocationID, chair.id, reqJson.latitude, reqJson.longitude]
     );
     const [[location]] = await ctx.var.dbConn.query<
       Array<ChairLocation & RowDataPacket>
     >("SELECT * FROM chair_locations WHERE id = ?", [chairLocationID]);
     const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1",
-      [chair.id],
+      [chair.id]
     );
     if (ride) {
       const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
@@ -87,7 +87,7 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
         ) {
           await ctx.var.dbConn.query(
             "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
-            [ulid(), ride.id, "PICKUP"],
+            [ulid(), ride.id, "PICKUP"]
           );
         }
         if (
@@ -97,7 +97,7 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
         ) {
           await ctx.var.dbConn.query(
             "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
-            [ulid(), ride.id, "ARRIVED"],
+            [ulid(), ride.id, "ARRIVED"]
           );
         }
       }
@@ -117,7 +117,7 @@ export const chairGetNotification = async (ctx: Context<Environment>) => {
   try {
     const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1",
-      [chair.id],
+      [chair.id]
     );
     if (!ride) {
       return ctx.json({ retry_after_ms: 30 }, 200);
@@ -127,7 +127,7 @@ export const chairGetNotification = async (ctx: Context<Environment>) => {
       Array<RideStatus & RowDataPacket>
     >(
       "SELECT * FROM ride_statuses WHERE ride_id = ? AND chair_sent_at IS NULL ORDER BY created_at ASC LIMIT 1",
-      [ride.id],
+      [ride.id]
     );
     const status = yetSentRideStatus
       ? yetSentRideStatus.status
@@ -135,13 +135,13 @@ export const chairGetNotification = async (ctx: Context<Environment>) => {
 
     const [[user]] = await ctx.var.dbConn.query<Array<User & RowDataPacket>>(
       "SELECT * FROM users WHERE id = ? FOR SHARE",
-      [ride.user_id],
+      [ride.user_id]
     );
 
     if (yetSentRideStatus?.id) {
       await ctx.var.dbConn.query(
         "UPDATE ride_statuses SET chair_sent_at = CURRENT_TIMESTAMP(6) WHERE id = ?",
-        [yetSentRideStatus.id],
+        [yetSentRideStatus.id]
       );
     }
 
@@ -164,9 +164,9 @@ export const chairGetNotification = async (ctx: Context<Environment>) => {
           },
           status,
         },
-        retry_after_ms: 30,
+        retry_after_ms: 100,
       },
-      200,
+      200
     );
   } catch (e) {
     await ctx.var.dbConn.rollback();
@@ -182,7 +182,7 @@ export const chairPostRideStatus = async (ctx: Context<Environment>) => {
   try {
     const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE id = ? FOR UPDATE",
-      [rideID],
+      [rideID]
     );
     if (!ride) {
       return ctx.text("ride not found", 404);
@@ -195,7 +195,7 @@ export const chairPostRideStatus = async (ctx: Context<Environment>) => {
       case "ENROUTE":
         await ctx.var.dbConn.query(
           "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
-          [ulid(), ride.id, "ENROUTE"],
+          [ulid(), ride.id, "ENROUTE"]
         );
         break;
       // After Picking up user
@@ -206,7 +206,7 @@ export const chairPostRideStatus = async (ctx: Context<Environment>) => {
         }
         await ctx.var.dbConn.query(
           "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
-          [ulid(), ride.id, "CARRYING"],
+          [ulid(), ride.id, "CARRYING"]
         );
         break;
       }
