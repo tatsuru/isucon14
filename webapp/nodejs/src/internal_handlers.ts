@@ -19,7 +19,10 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
     let completedChairs: Array<Chair & RowDataPacket> = [];
 
-    for (const chair of chairs) {
+    // chairsの7割
+    const chunkSize = Math.ceil(chairs.length * 0.7);
+    const targetChairs = chairs.slice(0, chunkSize);
+    for (const chair of targetChairs) {
       const [[result]] = await ctx.var.dbConn.query<
         Array<{ "COUNT(*) = 0": number } & RowDataPacket>
       >(
