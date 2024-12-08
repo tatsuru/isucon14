@@ -1,0 +1,34 @@
+#!/bin/sh
+
+set -v
+
+root=$(cd "$(dirname "$0")" && cd .. && pwd)
+now=$(date +%Y%m%d-%H%M%S)
+isu1=52.69.122.54
+isu2=18.182.103.41
+isu3=35.75.231.116
+
+branch=${1-main}
+
+update="cd /home/isucon/isucon14 && git remote update && git checkout $branch && git pull"
+restart="cd /home/isucon/isucon14/webapp/nodejs && /home/isucon/.x npm install && sudo systemctl restart isuride-node.service"
+rotate_nginx="sudo mv -v /var/log/nginx/access.log /var/log/nginx/access.log.$now && sudo ln -sf /var/log/nginx/access.log.$now /var/log/nginx/access.log.latest; sudo systemctl reload nginx.service"
+#rotate_mysql="sudo mv -v /var/log/mysql/mysql-slow.log /var/log/mysql/mysql-slow.log.$now && sudo ln -sf /var/log/mysql/mysql-slow.log.$now /var/log/mysql/mysql-slow.log.latest; mysqladmin -uisucon -pisucon flush-logs"
+
+ssh isucon@$isu1 "$update" &
+#ssh isucon@isu02 "$update" &
+#ssh isucon@isu03 "$update" &
+wait
+
+# app
+ssh isucon@$isu1 "$restart" &
+#ssh isucon@isu02 "$restart" &
+#ssh isucon@isu03 "$restart" &
+
+# nginx
+ssh isucon@$isu1 "$rotate_nginx" &
+
+# mysql
+#ssh isucon@isu03 "$rotate_mysql" &
+
+wait
