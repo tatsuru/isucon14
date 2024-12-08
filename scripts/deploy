@@ -16,14 +16,14 @@ rotate_nginx="sudo mv -v /var/log/nginx/access.log /var/log/nginx/access.log.$no
 rotate_mysql="sudo mv -v /var/log/mysql/mysql-slow.log /var/log/mysql/mysql-slow.log.$now && sudo ln -sf /var/log/mysql/mysql-slow.log.$now /var/log/mysql/mysql-slow.log.latest; mysqladmin -uisucon -pisucon flush-logs"
 
 ssh isucon@$isu1 "$update" &
-#ssh isucon@isu02 "$update" &
-#ssh isucon@isu03 "$update" &
+ssh isucon@$isu2 "$update" &
+ssh isucon@$isu3 "$update" &
 wait
 
 # app
 ssh isucon@$isu1 "$restart" &
-#ssh isucon@isu02 "$restart" &
-#ssh isucon@isu03 "$restart" &
+ssh isucon@$isu2 "$restart" &
+ssh isucon@$isu3 "$restart" &
 
 # nginx
 ssh isucon@$isu1 "$rotate_nginx" &
