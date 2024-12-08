@@ -7,6 +7,13 @@ import type { Chair, ChairLocation, Ride } from "./types/models.js";
 export const internalGetMatching = async (ctx: Context<Environment>) => {
   await ctx.var.dbConn.beginTransaction();
   try {
+    const [chairModels] = await ctx.var.dbConn.query<
+      Array<{ name: string; speed: number } & RowDataPacket>
+    >(`SELECT * FROM chair_models`);
+    const modelNameToSpeedMap = new Map<string, number>(
+      chairModels.map(({ name, speed }) => [name, speed])
+    );
+
     // ライドを取得
     const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE chair_id IS NULL ORDER BY created_at ASC FOR UPDATE"
@@ -65,14 +72,18 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
       let nearestChair: (ChairLocation & RowDataPacket) | null = null;
 
       //console.log(`Remaining chairs: ${chairs.length}`);
-      for (const chair of chairLocations) {
+      for (const chairLocation of chairLocations) {
+        const chair = completedChairs.find(
+          (chair) => chair.id === chairLocation.chair_id
+        )!;
+        const speed = modelNameToSpeedMap.get(chair.model)!;
         const distance =
-          Math.abs(chair.latitude - ride.pickup_latitude) +
-          Math.abs(chair.longitude - ride.pickup_longitude);
+          Math.abs(chairLocation.latitude - ride.pickup_latitude) +
+          Math.abs(chairLocation.longitude - ride.pickup_longitude) / speed;
         //console.log(`Chair ${chair.chair_id} distance: ${distance}`);
         if (distance < minDistance) {
           minDistance = distance;
-          nearestChair = chair;
+          nearestChair = chairLocation;
         }
       }
       //console.log(
