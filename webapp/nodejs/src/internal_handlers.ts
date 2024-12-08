@@ -7,26 +7,33 @@ import type { Chair, ChairLocation, Ride } from "./types/models.js";
 export const internalGetMatching = async (ctx: Context<Environment>) => {
   // 空いている椅子を取得
   const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
-    `SELECT chairs.*
-FROM chairs
-LEFT JOIN (
+    `SELECT * FROM chairs WHERE is_active = 1`
+  );
+
+  const [completedChairs] = await ctx.var.dbConn.query<
+    Array<{ chair_id: string } & RowDataPacket>
+  >(
+    `SELECT chair_id
+FROM (
     SELECT 
-        ride_id,
-        MAX(created_at) AS latest_status_time
-    FROM ride_statuses
-    GROUP BY ride_id
-) latest_status ON chairs.id = latest_status.ride_id
-LEFT JOIN ride_statuses rs ON latest_status.ride_id = rs.ride_id AND latest_status.latest_status_time = rs.created_at
-WHERE is_active = TRUE AND ((rs.status = 'COMPLETED' AND rs.chair_sent_at IS NOT NULL) OR rs.status IS NULL)`
+        rides.chair_id,
+        COUNT(CASE WHEN rs.chair_sent_at IS NOT NULL THEN 1 END) = 6 AS completed
+    FROM rides
+    LEFT JOIN ride_statuses rs ON rides.id = rs.ride_id
+    WHERE rides.chair_id IN (${chairs.map(() => "?").join(",")})
+    GROUP BY rides.chair_id
+) is_completed
+WHERE completed = FALSE`,
+    [chairs.map((chair) => chair.id)]
   );
 
   // 椅子がない場合は何もしない
-  if (chairs.length === 0) {
+  if (completedChairs.length === 0) {
     return ctx.body(null, 204);
   }
 
   // 空いている椅子の位置情報を取得
-  const chairIds = chairs.map((chair) => chair.id);
+  const chairIds = completedChairs.map((chair) => chair.id);
   const [chairLocations] = await ctx.var.dbConn.query<
     Array<ChairLocation & RowDataPacket>
   >(
