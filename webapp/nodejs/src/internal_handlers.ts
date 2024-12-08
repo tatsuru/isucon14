@@ -25,7 +25,7 @@ FROM (
     WHERE rides.chair_id IN (${chairIds.map(() => "?").join(",")})
     GROUP BY rides.chair_id
 ) is_completed
-WHERE completed = TRUE`,
+WHERE completed = TRUE OR completed IS NULL`,
     chairIds
   );
 
@@ -60,7 +60,7 @@ WHERE completed = TRUE`,
     console.log(`Matching ride ${ride.id}`);
     // 最も近い椅子を探す
     // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
-    let minDistance = 200;
+    let minDistance = Infinity;
     let nearestChair: (ChairLocation & RowDataPacket) | null = null;
 
     console.log(`Remaining chairs: ${chairs.length}`);
