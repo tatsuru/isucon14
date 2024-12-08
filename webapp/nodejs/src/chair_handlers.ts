@@ -175,7 +175,7 @@ export const chairGetNotification = async (ctx: Context<Environment>) => {
           },
           status,
         },
-        retry_after_ms: 30,
+        retry_after_ms: 100,
       },
       200
     );
