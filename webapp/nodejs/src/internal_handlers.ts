@@ -52,7 +52,7 @@ WHERE completed = FALSE`,
 
   // ライドを取得
   const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
-    "SELECT * FROM rides WHERE chair_id IS NULL ORDER BY created_at"
+    "SELECT * FROM rides WHERE chair_id IS NULL ORDER BY created_at ASC"
   );
 
   // ライドと椅子をマッチング
@@ -60,7 +60,7 @@ WHERE completed = FALSE`,
     console.log(`Matching ride ${ride.id}`);
     // 最も近い椅子を探す
     // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
-    let minDistance = Infinity;
+    let minDistance = 200;
     let nearestChair: (ChairLocation & RowDataPacket) | null = null;
 
     console.log(`Remaining chairs: ${chairs.length}`);
