@@ -33,7 +33,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
   }
 
   // 空いている椅子の位置情報を取得
-  const chairIds2 = completedChairs.map((chair) => chair.chair_id);
+  const chairIds2 = completedChairs.map((chair) => chair.id);
   const [chairLocations] = await ctx.var.dbConn.query<
     Array<ChairLocation & RowDataPacket>
   >(
@@ -47,6 +47,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
     ) cl2 ON cl1.chair_id = cl2.chair_id AND cl1.created_at = cl2.latest_created_at`,
     chairIds2
   );
+  console.log(`Chair locations: ${chairLocations.length}`);
 
   // ライドを取得
   const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
