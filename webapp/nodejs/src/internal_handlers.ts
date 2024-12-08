@@ -19,6 +19,8 @@ LEFT JOIN (
 LEFT JOIN ride_statuses rs ON latest_status.ride_id = rs.ride_id AND latest_status.latest_status_time = rs.created_at
 WHERE is_active = TRUE AND (rs.status = 'COMPLETED' OR rs.status IS NULL)`
   );
+
+  console.log(chairs);
   // 椅子がない場合は何もしない
   if (chairs.length === 0) {
     return ctx.body(null, 204);
