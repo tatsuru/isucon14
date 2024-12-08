@@ -10,7 +10,7 @@ export const requestPaymentGatewayPostPayment = async (
   paymentGatewayURL: string,
   token: string,
   param: PaymentGatewayPostPaymentRequest,
-  retrieveRidesOrderByCreatedAtAsc: () => Promise<Ride[]>,
+  retrieveRidesOrderByCreatedAtAsc: () => Promise<Ride[]>
 ): Promise<ErroredUpstream | Error | undefined> => {
   // 失敗したらとりあえずリトライ
   // FIXME: 社内決済マイクロサービスのインフラに異常が発生していて、同時にたくさんリクエストすると変なことになる可能性あり
@@ -38,7 +38,7 @@ export const requestPaymentGatewayPostPayment = async (
         // GET /payments は障害と関係なく200が返るので、200以外は回復不能なエラーとする
         if (getRes.status !== 200) {
           return new Error(
-            `[GET /payments] unexpected status code (${getRes.status})`,
+            `[GET /payments] unexpected status code (${getRes.status})`
           );
         }
         const payments = await getRes.json();
@@ -46,7 +46,7 @@ export const requestPaymentGatewayPostPayment = async (
         const rides = await retrieveRidesOrderByCreatedAtAsc();
         if (rides.length !== payments.length) {
           return new ErroredUpstream(
-            `unexpected number of payments: ${rides.length} != ${payments.length}`,
+            `unexpected number of payments: ${rides.length} != ${payments.length}`
           );
         }
       }
@@ -54,7 +54,8 @@ export const requestPaymentGatewayPostPayment = async (
     } catch (err) {
       if (retry < 5) {
         retry++;
-        await setTimeout(100);
+        // Exponential backoff
+        await setTimeout(2 ** retry * 100);
       } else {
         throw err;
       }
