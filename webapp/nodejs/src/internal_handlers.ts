@@ -7,7 +7,17 @@ import type { Chair, Ride } from "./types/models.js";
 export const internalGetMatching = async (ctx: Context<Environment>) => {
   // 空いている椅子を取得
   const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
-    "SELECT * FROM chairs WHERE is_active = TRUE"
+    `SELECT chairs.*
+FROM chairs
+LEFT JOIN (
+    SELECT 
+        ride_id,
+        MAX(created_at) AS latest_status_time
+    FROM ride_statuses
+    GROUP BY ride_id
+) latest_status ON chairs.id = latest_status.ride_id
+LEFT JOIN ride_statuses rs ON latest_status.ride_id = rs.ride_id AND latest_status.latest_status_time = rs.created_at
+WHERE rs.status = 'COMPLETED' OR rs.status IS NULL;`
   );
   // 椅子がない場合は何もしない
   if (chairs.length === 0) {
