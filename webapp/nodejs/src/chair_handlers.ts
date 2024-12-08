@@ -66,6 +66,14 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
   const chairLocationID = ulid();
   await ctx.var.dbConn.beginTransaction();
   try {
+    const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
+      "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1 FOR UPDATE",
+      [chair.id]
+    );
+    await ctx.var.dbConn.query(
+      "SELECT id FROM chairs WHERE id = ? FOR UPDATE",
+      [chair.id]
+    );
     const now = new Date();
     const location: ChairLocation = {
       id: chairLocationID,
@@ -100,10 +108,6 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
         location.longitude,
         location.created_at,
       ]
-    );
-    const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
-      "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1",
-      [chair.id]
     );
     if (ride) {
       const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
