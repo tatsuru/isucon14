@@ -70,7 +70,12 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
     for (const ride of rides) {
       // 最も近い椅子を探す
       let minTime = Infinity;
-      let nearestChair: (ChairLocation & RowDataPacket) | null = null;
+      let nearestChair:
+        | (ChairLocation &
+            RowDataPacket & {
+              model: string;
+            })
+        | null = null;
 
       for (const chair of chairLocations) {
         const distance =
