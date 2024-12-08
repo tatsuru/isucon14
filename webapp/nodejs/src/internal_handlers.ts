@@ -74,14 +74,14 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
       }
     }
     //console.log(
-      `Nearest chair: ${nearestChair?.chair_id}, distance: ${minDistance}`
-    );
+    //  `Nearest chair: ${nearestChair?.chair_id}, distance: ${minDistance}`
+    //);
 
     // ライドに椅子を紐付ける
     if (nearestChair) {
       //console.log(
-        `Matched ride ${ride.id} with chair ${nearestChair.chair_id}`
-      );
+      //  `Matched ride ${ride.id} with chair ${nearestChair.chair_id}`
+      //);
       await ctx.var.dbConn.query("UPDATE rides SET chair_id = ? WHERE id = ?", [
         nearestChair.chair_id,
         ride.id,
