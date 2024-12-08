@@ -32,7 +32,6 @@ CREATE TABLE chairs
   access_token VARCHAR(255) NOT NULL COMMENT 'アクセストークン',
   created_at   DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '登録日時',
   updated_at   DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '更新日時',
-  total_distance INTEGER    NOT NULL DEFAULT 0 COMMENT '総移動距離',
   PRIMARY KEY (id),
   INDEX owner_id_index (owner_id)
 )
