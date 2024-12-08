@@ -124,6 +124,10 @@ async function postInitialize(ctx: Context<Environment>) {
       [body.payment_server]
     );
 
+    await ctx.var.dbConn.query(
+      "ALTER TABLE chairs ADD COLUMN total_distance BIGINT NOT NULL DEFAULT 0"
+    );
+
     const [rows] = await ctx.var.dbConn.query<
       Array<{ id: string; total_distance: number } & RowDataPacket>
     >(
