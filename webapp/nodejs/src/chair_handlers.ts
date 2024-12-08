@@ -62,6 +62,7 @@ export const chairPostActivity = async (ctx: Context<Environment>) => {
 
 export const chairPostCoordinate = async (ctx: Context<Environment>) => {
   const reqJson = await ctx.req.json<Coordinate>();
+  await ctx.body(null, 204);
   const chair = ctx.var.chair;
   const chairLocationID = ulid();
   await ctx.var.dbConn.beginTransaction();
