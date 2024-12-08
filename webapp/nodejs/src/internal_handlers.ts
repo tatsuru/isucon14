@@ -17,7 +17,7 @@ LEFT JOIN (
     GROUP BY ride_id
 ) latest_status ON chairs.id = latest_status.ride_id
 LEFT JOIN ride_statuses rs ON latest_status.ride_id = rs.ride_id AND latest_status.latest_status_time = rs.created_at
-WHERE is_active = TRUE AND (rs.status = 'COMPLETED' OR rs.status IS NULL)`
+WHERE is_active = TRUE AND ((rs.status = 'COMPLETED' AND rs.chair_sent_at IS NOT NULL) OR rs.status IS NULL)`
   );
 
   // 椅子がない場合は何もしない
