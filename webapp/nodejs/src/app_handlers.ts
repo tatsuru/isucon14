@@ -675,7 +675,10 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
     for (const chair of chairs) {
       if (!chair.is_active) continue;
       if (!chair.completed) continue;
-      if (chair.latitude === undefined || chair.longitude === undefined) {
+      if (
+        (chair.latitude ?? undefined) === undefined ||
+        (chair.longitude ?? undefined) === undefined
+      ) {
         continue;
       }
 
@@ -683,8 +686,8 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
         calculateDistance(
           coordinate.latitude,
           coordinate.longitude,
-          chair.latitude,
-          chair.longitude
+          chair.latitude!,
+          chair.longitude!
         ) <= distance
       ) {
         nearbyChairs.push({
@@ -692,8 +695,8 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
           name: chair.name,
           model: chair.model,
           current_coordinate: {
-            latitude: chair.latitude,
-            longitude: chair.longitude,
+            latitude: chair.latitude!,
+            longitude: chair.longitude!,
           },
         });
       }
