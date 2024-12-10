@@ -14,7 +14,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
     // 空いている椅子を取得
     const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
-      `SELECT * FROM chairs WHERE is_active = 1 AND completed = 1`
+      `SELECT * FROM chairs WHERE is_active = 1 AND completed = 1 FOR UPDATE`
     );
 
     // ライドと椅子をマッチング
