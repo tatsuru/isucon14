@@ -133,10 +133,10 @@ export const appPostPaymentMethods = async (ctx: Context<Environment>) => {
   if (reqJson.token === "") {
     return ctx.text("token is required but was empty", 400);
   }
-  const user = ctx.var.user;
+  const userID = ctx.var.userID;
   await ctx.var.dbConn.query(
     "INSERT INTO payment_tokens (user_id, token) VALUES (?, ?)",
-    [user.id, reqJson.token]
+    [userID, reqJson.token]
   );
   return ctx.body(null, 204);
 };
@@ -158,13 +158,13 @@ type GetAppRidesResponseItem = {
 };
 
 export const appGetRides = async (ctx: Context<Environment>) => {
-  const user = ctx.var.user;
+  const userID = ctx.var.userID;
   await ctx.var.dbConn.beginTransaction();
   const items: GetAppRidesResponseItem[] = [];
   try {
     const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE user_id = ? ORDER BY created_at DESC",
-      [user.id]
+      [userID]
     );
     for (const ride of rides) {
       const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
@@ -174,7 +174,7 @@ export const appGetRides = async (ctx: Context<Environment>) => {
 
       const fare = await calculateDiscountedFare(
         ctx.var.dbConn,
-        user.id,
+        userID,
         ride,
         ride.pickup_latitude,
         ride.pickup_longitude,
@@ -235,13 +235,13 @@ export const appPostRides = async (ctx: Context<Environment>) => {
       400
     );
   }
-  const user = ctx.var.user;
+  const userID = ctx.var.userID;
   const rideId = ulid();
   await ctx.var.dbConn.beginTransaction();
   try {
     const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE user_id = ?",
-      [user.id]
+      [userID]
     );
     let continuingRideCount = 0;
     for (const ride of rides) {
@@ -257,7 +257,7 @@ export const appPostRides = async (ctx: Context<Environment>) => {
       "INSERT INTO rides (id, user_id, pickup_latitude, pickup_longitude, destination_latitude, destination_longitude) VALUES (?, ?, ?, ?, ?, ?)",
       [
         rideId,
-        user.id,
+        userID,
         reqJson.pickup_coordinate.latitude,
         reqJson.pickup_coordinate.longitude,
         reqJson.destination_coordinate.latitude,
@@ -270,14 +270,14 @@ export const appPostRides = async (ctx: Context<Environment>) => {
     );
     const [[{ "COUNT(*)": rideCount }]] = await ctx.var.dbConn.query<
       Array<CountResult & RowDataPacket>
-    >("SELECT COUNT(*) FROM rides WHERE user_id = ?", [user.id]);
+    >("SELECT COUNT(*) FROM rides WHERE user_id = ?", [userID]);
     if (rideCount === 1) {
       // 初回利用で、初回利用クーポンがあれば必ず使う
       const [[coupon]] = await ctx.var.dbConn.query<
         Array<Coupon & RowDataPacket>
       >(
         "SELECT * FROM coupons WHERE user_id = ? AND code = 'CP_NEW2024' AND used_by IS NULL FOR UPDATE",
-        [user.id]
+        [userID]
       );
 
       if (!coupon) {
@@ -286,19 +286,19 @@ export const appPostRides = async (ctx: Context<Environment>) => {
           Array<Coupon & RowDataPacket>
         >(
           "SELECT * FROM coupons WHERE user_id = ? AND used_by IS NULL ORDER BY created_at LIMIT 1 FOR UPDATE",
-          [user.id]
+          [userID]
         );
 
         if (coupon) {
           await ctx.var.dbConn.query(
             "UPDATE coupons SET used_by = ? WHERE user_id = ? AND code = ?",
-            [rideId, user.id, coupon.code]
+            [rideId, userID, coupon.code]
           );
         }
       } else {
         await ctx.var.dbConn.query(
           "UPDATE coupons SET used_by = ? WHERE user_id = ? AND code = 'CP_NEW2024'",
-          [rideId, user.id]
+          [rideId, userID]
         );
       }
     } else {
@@ -307,12 +307,12 @@ export const appPostRides = async (ctx: Context<Environment>) => {
         Array<Coupon & RowDataPacket>
       >(
         "SELECT * FROM coupons WHERE user_id = ? AND used_by IS NULL ORDER BY created_at LIMIT 1 FOR UPDATE",
-        [user.id]
+        [userID]
       );
       if (coupon) {
         await ctx.var.dbConn.query(
           "UPDATE coupons SET used_by = ? WHERE user_id = ? AND code = ?",
-          [rideId, user.id, coupon.code]
+          [rideId, userID, coupon.code]
         );
       }
     }
@@ -322,7 +322,7 @@ export const appPostRides = async (ctx: Context<Environment>) => {
     );
     const fare = await calculateDiscountedFare(
       ctx.var.dbConn,
-      user.id,
+      userID,
       ride,
       reqJson.pickup_coordinate.latitude,
       reqJson.pickup_coordinate.longitude,
@@ -354,12 +354,12 @@ export const appPostRidesEstimatedFare = async (ctx: Context<Environment>) => {
       400
     );
   }
-  const user = ctx.var.user;
+  const userID = ctx.var.userID;
   await ctx.var.dbConn.beginTransaction();
   try {
     const discounted = await calculateDiscountedFare(
       ctx.var.dbConn,
-      user.id,
+      userID,
       null,
       reqJson.pickup_coordinate.latitude,
       reqJson.pickup_coordinate.longitude,
@@ -503,12 +503,12 @@ type AppGetNotificationResponse = {
 
 export const appGetNotification = async (ctx: Context<Environment>) => {
   let response: AppGetNotificationResponse;
-  const user = ctx.var.user;
+  const userID = ctx.var.userID;
   ctx.var.dbConn.beginTransaction();
   try {
     const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
-      [user.id]
+      [userID]
     );
     if (!ride) {
       return ctx.json({ retry_after_ms: 30 }, 200);
@@ -525,7 +525,7 @@ export const appGetNotification = async (ctx: Context<Environment>) => {
 
     const fare = await calculateDiscountedFare(
       ctx.var.dbConn,
-      user.id,
+      userID,
       ride,
       ride.pickup_latitude,
       ride.pickup_longitude,

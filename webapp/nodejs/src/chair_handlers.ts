@@ -48,12 +48,12 @@ export const chairPostChairs = async (ctx: Context<Environment>) => {
 };
 
 export const chairPostActivity = async (ctx: Context<Environment>) => {
-  const chair = ctx.var.chair;
+  const chairID = ctx.var.chairID;
   const reqJson = await ctx.req.json<{ is_active: boolean }>();
   try {
     await ctx.var.dbConn.query("UPDATE chairs SET is_active = ? WHERE id = ?", [
       reqJson.is_active,
-      chair.id,
+      chairID,
     ]);
   } catch (e) {
     return ctx.text(`${e}`, 500);
@@ -63,13 +63,13 @@ export const chairPostActivity = async (ctx: Context<Environment>) => {
 
 export const chairPostCoordinate = async (ctx: Context<Environment>) => {
   const reqJson = await ctx.req.json<Coordinate>();
-  const chairId = ctx.var.chair.id;
+  const chairID = ctx.var.chairID;
   const now = new Date();
   await ctx.var.dbConn.beginTransaction();
   try {
     const [[chair]] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
       "SELECT * FROM chairs WHERE id = ? FOR UPDATE",
-      [chairId]
+      [chairID]
     );
     const distance =
       chair.latitude !== undefined && chair.longitude !== undefined
@@ -91,7 +91,7 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
     );
     const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1",
-      [chairId]
+      [chairID]
     );
     if (ride) {
       const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
@@ -128,13 +128,13 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
 };
 
 export const chairGetNotification = async (ctx: Context<Environment>) => {
-  const chair = ctx.var.chair;
+  const chairID = ctx.var.chairID;
 
   await ctx.var.dbConn.beginTransaction();
   try {
     const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1",
-      [chair.id]
+      [chairID]
     );
     if (!ride) {
       return ctx.json({ retry_after_ms: 30 }, 200);
@@ -200,7 +200,7 @@ export const chairGetNotification = async (ctx: Context<Environment>) => {
 
 export const chairPostRideStatus = async (ctx: Context<Environment>) => {
   const rideID = ctx.req.param("ride_id");
-  const chair = ctx.var.chair;
+  const chairID = ctx.var.chairID;
   const reqJson = await ctx.req.json<{ status: string }>();
   await ctx.var.dbConn.beginTransaction();
   try {
@@ -211,7 +211,7 @@ export const chairPostRideStatus = async (ctx: Context<Environment>) => {
     if (!ride) {
       return ctx.text("ride not found", 404);
     }
-    if (ride.chair_id !== chair.id) {
+    if (ride.chair_id !== chairID) {
       return ctx.text("not assigned to this ride", 400);
     }
     switch (reqJson.status) {

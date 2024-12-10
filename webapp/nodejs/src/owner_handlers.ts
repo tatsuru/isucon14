@@ -39,12 +39,12 @@ export const ownerGetSales = async (ctx: Context<Environment>) => {
     until.setTime(Number(ctx.req.query("until")));
   }
 
-  const owner = ctx.var.owner;
+  const ownerID = ctx.var.ownerID;
   await ctx.var.dbConn.beginTransaction();
   try {
     const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
       "SELECT * FROM chairs WHERE owner_id = ?",
-      [owner.id]
+      [ownerID]
     );
 
     let totalSales = 0;
@@ -89,11 +89,11 @@ type OwnerGetChairsResponseChair = {
 };
 
 export const ownerGetChairs = async (ctx: Context<Environment>) => {
-  const owner = ctx.var.owner;
+  const ownerID = ctx.var.ownerID;
   const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
     `SELECT * FROM chairs
 WHERE owner_id = ?`,
-    [owner.id]
+    [ownerID]
   );
 
   const chairResponse = chairs.map((chair) => {
