@@ -153,6 +153,9 @@ async function postInitialize(ctx: Context<Environment>) {
       );
     }
 
+    await ctx.var.dbConn.query(
+      "ALTER TABLE chairs ADD COLUMN distance_updated_at DATETIME"
+    );
     const [rows] = await ctx.var.dbConn.query<
       Array<
         {
@@ -186,7 +189,7 @@ async function postInitialize(ctx: Context<Environment>) {
         continue;
       }
       await ctx.var.dbConn.query(
-        `UPDATE chairs SET total_distance = ?, updated_at = ? WHERE id = ?`,
+        `UPDATE chairs SET total_distance = ?, distance_updated_at = ? WHERE id = ?`,
         [row.total_distance, row.total_distance_updated_at, row.id]
       );
     }

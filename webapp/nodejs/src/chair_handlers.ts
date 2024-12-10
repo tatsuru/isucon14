@@ -89,7 +89,7 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
       [chair.id]
     );
     await ctx.var.dbConn.query(
-      "UPDATE chairs SET latitude = ?, longitude = ?, total_distance = ? WHERE id = ?",
+      "UPDATE chairs SET latitude = ?, longitude = ?, total_distance = ?, location_updated_at = ? WHERE id = ?",
       [
         reqJson.latitude,
         reqJson.longitude,
@@ -98,19 +98,20 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
             Math.abs(reqJson.latitude - chair.latitude) +
             Math.abs(reqJson.longitude - chair.longitude)
           : chair.total_distance,
+        location.created_at,
         chair.id,
       ]
     );
-    await ctx.var.dbConn.query(
-      "INSERT INTO chair_locations (id, chair_id, latitude, longitude, created_at) VALUES (?, ?, ?, ?, ?)",
-      [
-        location.id,
-        location.chair_id,
-        location.latitude,
-        location.longitude,
-        location.created_at,
-      ]
-    );
+    // await ctx.var.dbConn.query(
+    //   "INSERT INTO chair_locations (id, chair_id, latitude, longitude, created_at) VALUES (?, ?, ?, ?, ?)",
+    //   [
+    //     location.id,
+    //     location.chair_id,
+    //     location.latitude,
+    //     location.longitude,
+    //     location.created_at,
+    //   ]
+    // );
     if (ride) {
       const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
       if (status !== "COMPLETED" && status !== "CANCELED") {

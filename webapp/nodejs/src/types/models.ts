@@ -10,6 +10,7 @@ export type Chair = {
   latitude: number | null;
   longitude: number | null;
   completed: boolean;
+  location_updated_at: Date | null;
 };
 
 export type ChairModel = {

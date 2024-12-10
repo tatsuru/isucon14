@@ -103,19 +103,8 @@ type OwnerGetChairsResponseChair = {
 
 export const ownerGetChairs = async (ctx: Context<Environment>) => {
   const owner = ctx.var.owner;
-  const [chairs] = await ctx.var.dbConn.query<
-    Array<ChairWithDetail & RowDataPacket>
-  >(
-    `SELECT id,
-       owner_id,
-       name,
-       access_token,
-       model,
-       is_active,
-       created_at,
-       updated_at,
-       total_distance
-FROM chairs
+  const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
+    `SELECT * FROM chairs
 WHERE owner_id = ?`,
     [owner.id]
   );
@@ -129,8 +118,8 @@ WHERE owner_id = ?`,
       registered_at: chair.created_at.getTime(),
       total_distance: Number(chair.total_distance),
     };
-    if (chair.total_distance !== 0) {
-      c.total_distance_updated_at = chair.updated_at.getTime();
+    if (chair.total_distance !== 0 && chair.total_distance_updated_at) {
+      c.total_distance_updated_at = chair.total_distance_updated_at.getTime();
     }
     return c;
   });
