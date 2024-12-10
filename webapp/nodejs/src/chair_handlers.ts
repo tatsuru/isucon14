@@ -5,6 +5,7 @@ import { ulid } from "ulid";
 import { getLatestRideStatus } from "./common.js";
 import type { Environment } from "./types/hono.js";
 import type {
+  Chair,
   ChairLocation,
   Coordinate,
   Owner,
@@ -62,17 +63,17 @@ export const chairPostActivity = async (ctx: Context<Environment>) => {
 
 export const chairPostCoordinate = async (ctx: Context<Environment>) => {
   const reqJson = await ctx.req.json<Coordinate>();
-  const chair = ctx.var.chair;
+  const chairId = ctx.var.chair.id;
   const chairLocationID = ulid();
   await ctx.var.dbConn.beginTransaction();
   try {
     const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1 FOR UPDATE",
-      [chair.id]
+      [chairId]
     );
-    await ctx.var.dbConn.query(
+    const [[chair]] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
       "SELECT id FROM chairs WHERE id = ? FOR UPDATE",
-      [chair.id]
+      [chairId]
     );
     const now = new Date();
     const location: ChairLocation = {
