@@ -82,12 +82,6 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
       longitude: reqJson.longitude,
       created_at: now,
     };
-    const [[oldLocation]] = await ctx.var.dbConn.query<
-      Array<ChairLocation & RowDataPacket>
-    >(
-      "SELECT * FROM chair_locations WHERE chair_id = ? ORDER BY created_at DESC LIMIT 1",
-      [chair.id]
-    );
     await ctx.var.dbConn.query(
       "UPDATE chairs SET latitude = ?, longitude = ?, total_distance = ?, total_distance_updated_at = ? WHERE id = ?",
       [
@@ -102,16 +96,6 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
         chair.id,
       ]
     );
-    // await ctx.var.dbConn.query(
-    //   "INSERT INTO chair_locations (id, chair_id, latitude, longitude, created_at) VALUES (?, ?, ?, ?, ?)",
-    //   [
-    //     location.id,
-    //     location.chair_id,
-    //     location.latitude,
-    //     location.longitude,
-    //     location.created_at,
-    //   ]
-    // );
     if (ride) {
       const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
       if (status !== "COMPLETED" && status !== "CANCELED") {

@@ -691,15 +691,7 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
         continue;
       }
 
-      // 最新の位置情報を取得
-      const [[chairLocation]] = await ctx.var.dbConn.query<
-        Array<ChairLocation & RowDataPacket>
-      >(
-        "SELECT * FROM chair_locations WHERE chair_id = ? ORDER BY created_at DESC LIMIT 1",
-        [chair.id]
-      );
-
-      if (!chairLocation) {
+      if (!chair.latitude || !chair.longitude) {
         continue;
       }
 
@@ -707,8 +699,8 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
         calculateDistance(
           coordinate.latitude,
           coordinate.longitude,
-          chairLocation.latitude,
-          chairLocation.longitude
+          chair.latitude,
+          chair.longitude
         ) <= distance
       ) {
         nearbyChairs.push({
@@ -716,8 +708,8 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
           name: chair.name,
           model: chair.model,
           current_coordinate: {
-            latitude: chairLocation.latitude,
-            longitude: chairLocation.longitude,
+            latitude: chair.latitude,
+            longitude: chair.longitude,
           },
         });
       }
