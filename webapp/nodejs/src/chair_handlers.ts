@@ -110,28 +110,28 @@ async function updateRideStatus(
     [chairID]
   );
   if (ride) {
-  }
-  const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
-  if (status !== "COMPLETED" && status !== "CANCELED") {
-    if (
-      reqJson.latitude === ride.pickup_latitude &&
-      reqJson.longitude === ride.pickup_longitude &&
-      status === "ENROUTE"
-    ) {
-      await ctx.var.dbConn.query(
-        "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
-        [ulid(), ride.id, "PICKUP"]
-      );
-    }
-    if (
-      reqJson.latitude === ride.destination_latitude &&
-      reqJson.longitude === ride.destination_longitude &&
-      status === "CARRYING"
-    ) {
-      await ctx.var.dbConn.query(
-        "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
-        [ulid(), ride.id, "ARRIVED"]
-      );
+    const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
+    if (status !== "COMPLETED" && status !== "CANCELED") {
+      if (
+        reqJson.latitude === ride.pickup_latitude &&
+        reqJson.longitude === ride.pickup_longitude &&
+        status === "ENROUTE"
+      ) {
+        await ctx.var.dbConn.query(
+          "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
+          [ulid(), ride.id, "PICKUP"]
+        );
+      }
+      if (
+        reqJson.latitude === ride.destination_latitude &&
+        reqJson.longitude === ride.destination_longitude &&
+        status === "CARRYING"
+      ) {
+        await ctx.var.dbConn.query(
+          "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
+          [ulid(), ride.id, "ARRIVED"]
+        );
+      }
     }
   }
 }
