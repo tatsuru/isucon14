@@ -46,8 +46,8 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
           continue;
         }
         const distance = calculateDistance(
-          ride.latitude,
-          ride.longitude,
+          ride.pickup_latitude,
+          ride.pickup_longitude,
           chair.latitude!,
           chair.longitude!
         );
