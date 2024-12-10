@@ -89,43 +89,52 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
         chair.id,
       ]
     );
-    const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
-      "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1",
-      [chairID]
-    );
-    if (ride) {
-      const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
-      if (status !== "COMPLETED" && status !== "CANCELED") {
-        if (
-          reqJson.latitude === ride.pickup_latitude &&
-          reqJson.longitude === ride.pickup_longitude &&
-          status === "ENROUTE"
-        ) {
-          await ctx.var.dbConn.query(
-            "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
-            [ulid(), ride.id, "PICKUP"]
-          );
-        }
-        if (
-          reqJson.latitude === ride.destination_latitude &&
-          reqJson.longitude === ride.destination_longitude &&
-          status === "CARRYING"
-        ) {
-          await ctx.var.dbConn.query(
-            "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
-            [ulid(), ride.id, "ARRIVED"]
-          );
-        }
-      }
-    }
     await ctx.var.dbConn.commit();
-    return ctx.json({ recorded_at: now.getTime() }, 200);
   } catch (e) {
     console.error(e);
     await ctx.var.dbConn.rollback();
     return ctx.text(`${e}`, 500);
   }
+  // 非同期でライドのステータスを更新
+  updateRideStatus(ctx, chairID, reqJson);
+  return ctx.json({ recorded_at: now.getTime() }, 200);
 };
+
+async function updateRideStatus(
+  ctx: Context<Environment>,
+  chairID: string,
+  reqJson: Coordinate
+) {
+  const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
+    "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1",
+    [chairID]
+  );
+  if (ride) {
+  }
+  const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
+  if (status !== "COMPLETED" && status !== "CANCELED") {
+    if (
+      reqJson.latitude === ride.pickup_latitude &&
+      reqJson.longitude === ride.pickup_longitude &&
+      status === "ENROUTE"
+    ) {
+      await ctx.var.dbConn.query(
+        "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
+        [ulid(), ride.id, "PICKUP"]
+      );
+    }
+    if (
+      reqJson.latitude === ride.destination_latitude &&
+      reqJson.longitude === ride.destination_longitude &&
+      status === "CARRYING"
+    ) {
+      await ctx.var.dbConn.query(
+        "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)",
+        [ulid(), ride.id, "ARRIVED"]
+      );
+    }
+  }
+}
 
 export const chairGetNotification = async (ctx: Context<Environment>) => {
   const chairID = ctx.var.chairID;
