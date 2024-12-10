@@ -70,6 +70,10 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
       "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1 FOR UPDATE",
       [chair.id]
     );
+    await ctx.var.dbConn.query(
+      "SELECT id FROM chairs WHERE id = ? FOR UPDATE",
+      [chair.id]
+    );
     const now = new Date();
     const location: ChairLocation = {
       id: chairLocationID,
