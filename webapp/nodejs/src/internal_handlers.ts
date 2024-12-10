@@ -42,14 +42,14 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
       //console.log(`Remaining chairs: ${chairs.length}`);
       for (const chair of chairs) {
-        if (!chair.latitude || !chair.longitude) {
+        if (chair.latitude === null || chair.longitude === null) {
           continue;
         }
         const distance = calculateDistance(
           ride.latitude,
           ride.longitude,
-          chair.latitude,
-          chair.longitude
+          chair.latitude!,
+          chair.longitude!
         );
 
         // 速度による足切り
