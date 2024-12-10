@@ -51,6 +51,9 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
           chair.latitude!,
           chair.longitude!
         );
+        console.log(
+          `Chair ${chair.id} distance: ${distance}, latitude: ${chair.latitude}, longitude: ${chair.longitude}`
+        );
 
         // 速度による足切り
         const model = modelMap.get(chair.model);
