@@ -125,6 +125,34 @@ async function postInitialize(ctx: Context<Environment>) {
       [body.payment_server]
     );
 
+    await ctx.var.dbConn.query(
+      "ALTER TABLE chairs ADD COLUMN latitude INTEGER COMMENT '経度'"
+    );
+    await ctx.var.dbConn.query(
+      "ALTER TABLE chairs ADD COLUMN longitude INTEGER COMMENT '経度'"
+    );
+    await ctx.var.dbConn.query(
+      "ALTER TABLE chairs ADD COLUMN completed INTEGER NOT NULL DEFAULT 1"
+    );
+    // chairId ごとに最新の位置情報を取得
+    const [locations] = await ctx.var.dbConn.query<
+      Array<ChairLocation & RowDataPacket>
+    >(
+      `SELECT cl1.chair_id, cl1.latitude, cl1.longitude
+        FROM chair_locations cl1
+        INNER JOIN (
+          SELECT chair_id, MAX(created_at) AS latest_created_at
+          FROM chair_locations
+          GROUP BY chair_id
+        ) cl2 ON cl1.chair_id = cl2.chair_id AND cl1.created_at = cl2.latest_created_at`
+    );
+    for (const location of locations) {
+      await ctx.var.dbConn.query(
+        "UPDATE chairs SET latitude = ?, longitude = ? WHERE id = ?",
+        [location.latitude, location.longitude, location.chair_id]
+      );
+    }
+
     const [rows] = await ctx.var.dbConn.query<
       Array<
         {
@@ -160,34 +188,6 @@ async function postInitialize(ctx: Context<Environment>) {
       await ctx.var.dbConn.query(
         `UPDATE chairs SET total_distance = ?, updated_at = ? WHERE id = ?`,
         [row.total_distance, row.total_distance_updated_at, row.id]
-      );
-    }
-
-    await ctx.var.dbConn.query(
-      "ALTER TABLE chairs ADD COLUMN latitude INTEGER COMMENT '経度'"
-    );
-    await ctx.var.dbConn.query(
-      "ALTER TABLE chairs ADD COLUMN longitude INTEGER COMMENT '経度'"
-    );
-    await ctx.var.dbConn.query(
-      "ALTER TABLE chairs ADD COLUMN completed INTEGER NOT NULL DEFAULT 1"
-    );
-    // chairId ごとに最新の位置情報を取得
-    const [locations] = await ctx.var.dbConn.query<
-      Array<ChairLocation & RowDataPacket>
-    >(
-      `SELECT cl1.chair_id, cl1.latitude, cl1.longitude
-        FROM chair_locations cl1
-        INNER JOIN (
-          SELECT chair_id, MAX(created_at) AS latest_created_at
-          FROM chair_locations
-          GROUP BY chair_id
-        ) cl2 ON cl1.chair_id = cl2.chair_id AND cl1.created_at = cl2.latest_created_at`
-    );
-    for (const location of locations) {
-      await ctx.var.dbConn.query(
-        "UPDATE chairs SET latitude = ?, longitude = ? WHERE id = ?",
-        [location.latitude, location.longitude, location.chair_id]
       );
     }
   } catch (error) {
