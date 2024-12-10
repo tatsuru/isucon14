@@ -9,7 +9,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
   try {
     // ライドを取得
     const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
-      "SELECT * FROM rides WHERE chair_id IS NULL ORDER BY created_at ASC FOR UPDATE"
+      "SELECT * FROM rides WHERE id IS NULL ORDER BY created_at ASC FOR UPDATE"
     );
 
     // 空いている椅子を取得
@@ -35,7 +35,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
           Math.abs(chair.latitude - ride.pickup_latitude) +
           Math.abs(chair.longitude - ride.pickup_longitude);
 
-        console.log(`Chair ${chair.chair_id} distance: ${distance}`);
+        console.log(`Chair ${chair.id} distance: ${distance}`);
 
         if (distance < minDistance) {
           minDistance = distance;
@@ -43,22 +43,20 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
         }
       }
       console.log(
-        `Nearest chair: ${nearestChair?.chair_id}, distance: ${minDistance}`
+        `Nearest chair: ${nearestChair?.id}, distance: ${minDistance}`
       );
 
       // ライドに椅子を紐付ける
       if (nearestChair) {
-        console.log(
-          `Matched ride ${ride.id} with chair ${nearestChair.chair_id}`
-        );
-        await ctx.var.dbConn.query(
-          "UPDATE rides SET chair_id = ? WHERE id = ?",
-          [nearestChair.chair_id, ride.id]
-        );
+        console.log(`Matched ride ${ride.id} with chair ${nearestChair.id}`);
+        await ctx.var.dbConn.query("UPDATE rides SET id = ? WHERE id = ?", [
+          nearestChair.id,
+          ride.id,
+        ]);
 
         await ctx.var.dbConn.query(
           "UPDATE chairs SET completed = 0 WHERE id = ?",
-          [nearestChair.chair_id]
+          [nearestChair.id]
         );
 
         // 紐付けた椅子を消す
