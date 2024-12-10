@@ -72,7 +72,7 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
       [chairId]
     );
     const distance =
-      chair.latitude && chair.longitude
+      chair.latitude !== null && chair.longitude !== null
         ? Math.abs(reqJson.latitude - chair.latitude) +
           Math.abs(reqJson.longitude - chair.longitude)
         : 0;
