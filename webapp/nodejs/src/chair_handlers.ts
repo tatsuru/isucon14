@@ -64,32 +64,25 @@ export const chairPostActivity = async (ctx: Context<Environment>) => {
 export const chairPostCoordinate = async (ctx: Context<Environment>) => {
   const reqJson = await ctx.req.json<Coordinate>();
   const chairId = ctx.var.chair.id;
-  const chairLocationID = ulid();
+  const now = new Date();
   await ctx.var.dbConn.beginTransaction();
   try {
     const [[chair]] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
       "SELECT id FROM chairs WHERE id = ? FOR UPDATE",
       [chairId]
     );
-    const now = new Date();
-    const location: ChairLocation = {
-      id: chairLocationID,
-      chair_id: chair.id,
-      latitude: reqJson.latitude,
-      longitude: reqJson.longitude,
-      created_at: now,
-    };
+    const distance =
+      chair.latitude && chair.longitude
+        ? Math.abs(reqJson.latitude - chair.latitude) +
+          Math.abs(reqJson.longitude - chair.longitude)
+        : 0;
     await ctx.var.dbConn.query(
       "UPDATE chairs SET latitude = ?, longitude = ?, total_distance = ?, total_distance_updated_at = ? WHERE id = ?",
       [
         reqJson.latitude,
         reqJson.longitude,
-        chair.latitude && chair.longitude
-          ? chair.total_distance +
-            Math.abs(reqJson.latitude - chair.latitude) +
-            Math.abs(reqJson.longitude - chair.longitude)
-          : chair.total_distance,
-        location.created_at,
+        chair.total_distance + distance,
+        now,
         chair.id,
       ]
     );
@@ -123,10 +116,11 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
       }
     }
     await ctx.var.dbConn.commit();
-    return ctx.json({ recorded_at: location.created_at.getTime() }, 200);
+    return ctx.json({ recorded_at: now.getTime() }, 200);
   } catch (e) {
     await ctx.var.dbConn.rollback();
     return ctx.text(`${e}`, 500);
+    console.error(e);
   }
 };
 
