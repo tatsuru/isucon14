@@ -4,8 +4,8 @@ import type { Chair, Owner, User } from "./models.js";
 export type Environment = {
   Variables: {
     dbConn: PoolConnection;
-    user: User;
-    owner: Owner;
-    chair: Chair;
+    userID: string;
+    ownerID: string;
+    chairID: string;
   };
 };

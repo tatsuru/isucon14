@@ -39,12 +39,12 @@ export const ownerGetSales = async (ctx: Context<Environment>) => {
     until.setTime(Number(ctx.req.query("until")));
   }
 
-  const owner = ctx.var.owner;
+  const ownerID = ctx.var.ownerID;
   await ctx.var.dbConn.beginTransaction();
   try {
     const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
       "SELECT * FROM chairs WHERE owner_id = ?",
-      [owner.id]
+      [ownerID]
     );
 
     let totalSales = 0;
@@ -78,19 +78,6 @@ export const ownerGetSales = async (ctx: Context<Environment>) => {
   }
 };
 
-type ChairWithDetail = {
-  id: string;
-  owner_id: string;
-  name: string;
-  access_token: string;
-  model: string;
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
-  total_distance: number;
-  total_distance_updated_at: Date | null;
-};
-
 type OwnerGetChairsResponseChair = {
   id: string;
   name: string;
@@ -102,22 +89,11 @@ type OwnerGetChairsResponseChair = {
 };
 
 export const ownerGetChairs = async (ctx: Context<Environment>) => {
-  const owner = ctx.var.owner;
-  const [chairs] = await ctx.var.dbConn.query<
-    Array<ChairWithDetail & RowDataPacket>
-  >(
-    `SELECT id,
-       owner_id,
-       name,
-       access_token,
-       model,
-       is_active,
-       created_at,
-       updated_at,
-       total_distance
-FROM chairs
+  const ownerID = ctx.var.ownerID;
+  const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
+    `SELECT * FROM chairs
 WHERE owner_id = ?`,
-    [owner.id]
+    [ownerID]
   );
 
   const chairResponse = chairs.map((chair) => {
@@ -129,8 +105,8 @@ WHERE owner_id = ?`,
       registered_at: chair.created_at.getTime(),
       total_distance: Number(chair.total_distance),
     };
-    if (chair.total_distance !== 0) {
-      c.total_distance_updated_at = chair.updated_at.getTime();
+    if (chair.total_distance !== 0 && chair.total_distance_updated_at) {
+      c.total_distance_updated_at = chair.total_distance_updated_at.getTime();
     }
     return c;
   });
