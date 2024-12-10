@@ -77,14 +77,14 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
           Math.abs(reqJson.longitude - chair.longitude)
         : 0;
     console.log(
-      `distance: ${distance}, chair latitude: ${chair.latitude}, chair longitude: ${chair.longitude}`
+      `distance: ${distance} + ${chair.total_distance}, chair: [${chair.latitude}, ${chair.longitude}]`
     );
     await ctx.var.dbConn.query(
       "UPDATE chairs SET latitude = ?, longitude = ?, total_distance = ?, total_distance_updated_at = ? WHERE id = ?",
       [
         reqJson.latitude,
         reqJson.longitude,
-        chair.total_distance + distance,
+        chair.total_distance ?? 0 + distance,
         now,
         chair.id,
       ]
