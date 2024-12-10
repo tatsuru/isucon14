@@ -54,16 +54,18 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
         // 速度による足切り
         const model = modelMap.get(chair.model);
-        if (model) {
-          const distancePerSpeed = distance / model.speed;
+        console.log(`Chair ${chair.id} model: ${model}`);
+        if (!model) {
+          continue;
+        }
+        const distancePerSpeed = distance / model.speed;
 
-          // console.log(`Chair ${chair.id} distance: ${distance}`);
+        // console.log(`Chair ${chair.id} distance: ${distance}`);
 
-          if (distancePerSpeed < minDistancePerSpeed) {
-            minDistance = distance;
-            minDistancePerSpeed = distancePerSpeed;
-            nearestChair = chair;
-          }
+        if (distancePerSpeed < minDistancePerSpeed) {
+          minDistance = distance;
+          minDistancePerSpeed = distancePerSpeed;
+          nearestChair = chair;
         }
       }
       // console.log(
