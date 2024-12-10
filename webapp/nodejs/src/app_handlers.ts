@@ -691,7 +691,7 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
         continue;
       }
 
-      if (!chair.latitude || !chair.longitude) {
+      if (chair.latitude === undefined || chair.longitude === undefined) {
         continue;
       }
 
