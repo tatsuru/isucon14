@@ -178,7 +178,7 @@ export const chairGetNotification = async (ctx: Context<Environment>) => {
         [yetSentRideStatus.id]
       );
 
-      if (status === "COMPLETED") {
+      if (yetSentRideStatus.status === "COMPLETED") {
         await ctx.var.dbConn.query(
           "UPDATE chairs SET completed = 1 WHERE id = ?",
           [ride.chair_id]
