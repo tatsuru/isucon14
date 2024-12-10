@@ -661,7 +661,7 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
 
   const coordinate: Coordinate = { latitude: lat, longitude: lon };
 
-  await ctx.var.dbConn.beginTransaction();
+  const now = Date.now();
   try {
     const [chairs] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
       "SELECT * FROM chairs"
@@ -674,23 +674,7 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
     }> = [];
     for (const chair of chairs) {
       if (!chair.is_active) continue;
-      const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
-        "SELECT * FROM rides WHERE chair_id = ? ORDER BY created_at DESC",
-        [chair.id]
-      );
-      let skip = false;
-      for (const ride of rides) {
-        // 過去にライドが存在し、かつ、それが完了していない場合はスキップ
-        const status = await getLatestRideStatus(ctx.var.dbConn, ride.id);
-        if (status !== "COMPLETED") {
-          skip = true;
-          break;
-        }
-      }
-      if (skip) {
-        continue;
-      }
-
+      if (!chair.completed) continue;
       if (chair.latitude === undefined || chair.longitude === undefined) {
         continue;
       }
@@ -715,20 +699,15 @@ export const appGetNearbyChairs = async (ctx: Context<Environment>) => {
       }
     }
 
-    const [[{ "CURRENT_TIMESTAMP(6)": retrievedAt }]] =
-      await ctx.var.dbConn.query<
-        Array<{ "CURRENT_TIMESTAMP(6)": Date } & RowDataPacket>
-      >("SELECT CURRENT_TIMESTAMP(6)");
     await ctx.var.dbConn.commit();
     return ctx.json(
       {
         chairs: nearbyChairs,
-        retrieved_at: retrievedAt.getTime(),
+        retrieved_at: now,
       },
       200
     );
   } catch (err) {
-    await ctx.var.dbConn.rollback();
     return ctx.text(`${err}`, 500);
   }
 };
