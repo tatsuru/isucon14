@@ -153,9 +153,6 @@ async function postInitialize(ctx: Context<Environment>) {
       );
     }
 
-    await ctx.var.dbConn.query(
-      "ALTER TABLE chairs ADD COLUMN distance_updated_at DATETIME"
-    );
     const [rows] = await ctx.var.dbConn.query<
       Array<
         {
@@ -183,13 +180,16 @@ async function postInitialize(ctx: Context<Environment>) {
     await ctx.var.dbConn.query(
       "ALTER TABLE chairs ADD COLUMN total_distance BIGINT NOT NULL DEFAULT 0"
     );
+    await ctx.var.dbConn.query(
+      "ALTER TABLE chairs ADD COLUMN total_distance_updated_at DATETIME"
+    );
 
     for (const row of rows) {
       if (!row.total_distance_updated_at) {
         continue;
       }
       await ctx.var.dbConn.query(
-        `UPDATE chairs SET total_distance = ?, distance_updated_at = ? WHERE id = ?`,
+        `UPDATE chairs SET total_distance = ?, total_distance_updated_at = ? WHERE id = ?`,
         [row.total_distance, row.total_distance_updated_at, row.id]
       );
     }
