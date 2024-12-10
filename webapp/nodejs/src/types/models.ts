@@ -7,6 +7,9 @@ export type Chair = {
   created_at: Date;
   updated_at: Date;
   total_distance: number;
+  latitude: number | null;
+  longitude: number | null;
+  completed: boolean;
 };
 
 export type ChairModel = {
