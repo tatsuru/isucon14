@@ -572,13 +572,6 @@ export const appGetNotification = async (ctx: Context<Environment>) => {
         "UPDATE ride_statuses SET app_sent_at = CURRENT_TIMESTAMP(6) WHERE id = ?",
         [yetSentRideStatus.id]
       );
-
-      if (status === "COMPLETED") {
-        await ctx.var.dbConn.query(
-          "UPDATE chairs SET completed = 1 WHERE id = ?",
-          [ride.chair_id]
-        );
-      }
     }
 
     await ctx.var.dbConn.commit();
