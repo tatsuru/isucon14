@@ -1,12 +1,25 @@
 import type { Context } from "hono";
 import type { Environment } from "./types/hono.js";
 import type { RowDataPacket } from "mysql2";
-import type { Chair, ChairLocation, Ride } from "./types/models.js";
+import type { Chair, ChairLocation, ChairModel, Ride } from "./types/models.js";
+import { calculateDistance } from "./common.js";
+
+const modelMap = new Map<string, ChairModel>();
 
 // このAPIをインスタンス内から一定間隔で叩かせることで、椅子とライドをマッチングさせる
 export const internalGetMatching = async (ctx: Context<Environment>) => {
   await ctx.var.dbConn.beginTransaction();
   try {
+    if (modelMap.size === 0) {
+      // モデルを取得
+      const [models] = await ctx.var.dbConn.query<
+        Array<ChairModel & RowDataPacket>
+      >(`SELECT * FROM chair_models`);
+      for (const model of models) {
+        modelMap.set(model.name, model);
+      }
+    }
+
     // ライドを取得
     const [rides] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
       "SELECT * FROM rides WHERE chair_id IS NULL ORDER BY created_at ASC FOR UPDATE"
@@ -24,6 +37,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
       // 最も近い椅子を探す
       // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
       let minDistance = 200;
+      let minDistancePerSpeed = 200;
       let nearestChair: (Chair & RowDataPacket) | null = null;
 
       //console.log(`Remaining chairs: ${chairs.length}`);
@@ -31,15 +45,25 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
         if (!chair.latitude || !chair.longitude) {
           continue;
         }
-        const distance =
-          Math.abs(chair.latitude - ride.pickup_latitude) +
-          Math.abs(chair.longitude - ride.pickup_longitude);
+        const distance = calculateDistance(
+          ride.latitude,
+          ride.longitude,
+          chair.latitude,
+          chair.longitude
+        );
 
-        // console.log(`Chair ${chair.id} distance: ${distance}`);
+        // 速度による足切り
+        const model = modelMap.get(chair.model);
+        if (model) {
+          const distancePerSpeed = distance / model.speed;
 
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearestChair = chair;
+          // console.log(`Chair ${chair.id} distance: ${distance}`);
+
+          if (distancePerSpeed < minDistancePerSpeed) {
+            minDistance = distance;
+            minDistancePerSpeed = distancePerSpeed;
+            nearestChair = chair;
+          }
         }
       }
       // console.log(
