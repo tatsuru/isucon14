@@ -68,7 +68,7 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
   await ctx.var.dbConn.beginTransaction();
   try {
     const [[ride]] = await ctx.var.dbConn.query<Array<Ride & RowDataPacket>>(
-      "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1 FOR UPDATE",
+      "SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1",
       [chairId]
     );
     const [[chair]] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
