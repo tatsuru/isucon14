@@ -88,3 +88,15 @@ export const chairAuthMiddleware = createMiddleware<Environment>(
     await next();
   }
 );
+
+export function clearCache() {
+  Object.keys(usersCache).forEach((key) => {
+    delete usersCache[key];
+  });
+  Object.keys(ownersCache).forEach((key) => {
+    delete ownersCache[key];
+  });
+  Object.keys(chairsCache).forEach((key) => {
+    delete chairsCache[key];
+  });
+}

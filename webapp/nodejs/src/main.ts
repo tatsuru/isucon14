@@ -21,6 +21,7 @@ import {
 import {
   appAuthMiddleware,
   chairAuthMiddleware,
+  clearCache,
   ownerAuthMiddleware,
 } from "./middlewares.js";
 import {
@@ -34,6 +35,7 @@ import { internalGetMatching } from "./internal_handlers.js";
 import { createPool, type RowDataPacket } from "mysql2/promise";
 import { logger } from "hono/logger";
 import type { ChairLocation } from "./types/models.js";
+import { clear } from "node:console";
 
 const pool = createPool({
   host: process.env.ISUCON_DB_HOST || "127.0.0.1",
@@ -197,5 +199,6 @@ async function postInitialize(ctx: Context<Environment>) {
     console.error(error);
     return ctx.text(`Internal Server Error\n${error}`, 500);
   }
+  clearCache();
   return ctx.json({ language: "node" });
 }
