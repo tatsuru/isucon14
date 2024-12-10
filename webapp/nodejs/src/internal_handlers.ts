@@ -36,8 +36,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
       // 最も近い椅子を探す
       // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
-      let minDistance = 200;
-      let minDistancePerSpeed = 100;
+      let minScore = 100;
       let nearestChair: (Chair & RowDataPacket) | null = null;
 
       //console.log(`Remaining chairs: ${chairs.length}`);
@@ -45,15 +44,15 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
         if (chair.latitude === null || chair.longitude === null) {
           continue;
         }
-        const distance = calculateDistance(
+        const pickDistance = calculateDistance(
           ride.pickup_latitude,
           ride.pickup_longitude,
           chair.latitude!,
           chair.longitude!
         );
-        console.log(
-          `Chair ${chair.id} distance: ${distance}, latitude: ${chair.latitude}, longitude: ${chair.longitude}`
-        );
+        // console.log(
+        //   `Chair ${chair.id} distance: ${distance}, latitude: ${chair.latitude}, longitude: ${chair.longitude}`
+        // );
 
         // 速度による足切り
         const model = modelMap.get(chair.model);
@@ -63,16 +62,23 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
         if (!model) {
           continue;
         }
-        const distancePerSpeed = distance / model.speed;
-        console.log(
-          `Chair ${chair.id} distance: ${distance}, distancePerSpeed: ${distancePerSpeed}`
+        // console.log(
+        //   `Chair ${chair.id} distance: ${distance}, distancePerSpeed: ${distancePerSpeed}`
+        // );
+
+        const distance = calculateDistance(
+          ride.pickup_latitude,
+          ride.pickup_longitude,
+          ride.destination_longitude,
+          ride.destination_latitude
         );
+
+        const score = distance / model.speed + pickDistance / model.speed;
 
         // console.log(`Chair ${chair.id} distance: ${distance}`);
 
-        if (distancePerSpeed < minDistancePerSpeed) {
-          minDistance = distance;
-          minDistancePerSpeed = distancePerSpeed;
+        if (score < minScore) {
+          minScore = score;
           nearestChair = chair;
         }
       }
