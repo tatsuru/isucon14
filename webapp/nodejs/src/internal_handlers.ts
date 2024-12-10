@@ -19,7 +19,7 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
 
     // ライドと椅子をマッチング
     for (const ride of rides) {
-      console.log(`Matching ride ${ride.id}`);
+      // console.log(`Matching ride ${ride.id}`);
 
       // 最も近い椅子を探す
       // 0,0 と 300, 300付近にクラスターがあるので、マンハッタン距離200で足切りする
@@ -35,20 +35,20 @@ export const internalGetMatching = async (ctx: Context<Environment>) => {
           Math.abs(chair.latitude - ride.pickup_latitude) +
           Math.abs(chair.longitude - ride.pickup_longitude);
 
-        console.log(`Chair ${chair.id} distance: ${distance}`);
+        // console.log(`Chair ${chair.id} distance: ${distance}`);
 
         if (distance < minDistance) {
           minDistance = distance;
           nearestChair = chair;
         }
       }
-      console.log(
-        `Nearest chair: ${nearestChair?.id}, distance: ${minDistance}`
-      );
+      // console.log(
+      //   `Nearest chair: ${nearestChair?.id}, distance: ${minDistance}`
+      // );
 
       // ライドに椅子を紐付ける
       if (nearestChair) {
-        console.log(`Matched ride ${ride.id} with chair ${nearestChair.id}`);
+        // console.log(`Matched ride ${ride.id} with chair ${nearestChair.id}`);
         await ctx.var.dbConn.query(
           "UPDATE rides SET chair_id = ? WHERE id = ?",
           [nearestChair.id, ride.id]
