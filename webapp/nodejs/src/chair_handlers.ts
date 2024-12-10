@@ -68,7 +68,7 @@ export const chairPostCoordinate = async (ctx: Context<Environment>) => {
   await ctx.var.dbConn.beginTransaction();
   try {
     const [[chair]] = await ctx.var.dbConn.query<Array<Chair & RowDataPacket>>(
-      "SELECT id FROM chairs WHERE id = ? FOR UPDATE",
+      "SELECT * FROM chairs WHERE id = ? FOR UPDATE",
       [chairId]
     );
     const distance =
