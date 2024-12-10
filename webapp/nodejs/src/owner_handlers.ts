@@ -78,19 +78,6 @@ export const ownerGetSales = async (ctx: Context<Environment>) => {
   }
 };
 
-type ChairWithDetail = {
-  id: string;
-  owner_id: string;
-  name: string;
-  access_token: string;
-  model: string;
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
-  total_distance: number;
-  total_distance_updated_at: Date | null;
-};
-
 type OwnerGetChairsResponseChair = {
   id: string;
   name: string;
